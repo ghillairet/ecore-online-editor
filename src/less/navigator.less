@@ -1,0 +1,135 @@
+@import "lib.less";
+
+@nav-side-color: #000;
+@nav-side-shadow-color: rgba(0,0,0,0.30);
+@nav-side-background: #F5F5F5;
+@box-background: #F1F1F1;
+@icon-color: rgb(105, 105, 105);
+
+#navigator {
+    width: 280px;
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    overflow: hidden;
+    background: @nav-side-background;
+    color: @nav-side-color;
+    -webkit-user-select: none;
+    .nav-display;
+    .box-shadow-inset(1px 0 2px, @nav-side-shadow-color);
+
+    .nav-header {
+        height: 50px;
+
+        .nav-header-content {
+            top: 10px;
+            position: relative;
+            width: 100%;
+            .box-sizing;
+
+             h3 {
+                position: absolute;
+                font-size: 14px;
+                line-height: 10px;
+                top: 3px;
+                margin: 0;
+            }
+
+            i {
+                position: absolute;
+                cursor: pointer;
+            }
+
+            .icon-double-angle-left {
+                right: 0;
+                cursor: pointer;
+            }
+            .icon-double-angle-right {
+                right: 0;
+                cursor: pointer;
+            }
+        }
+    }
+
+    .nav-box {
+        overflow: hidden;
+        position: relative;
+        left: 0;
+        width: 100%;
+        padding: 2px;
+
+        .nav-box-header {
+            line-height: 20px;
+            padding: 0 8px;
+            margin: 0;
+            background: @box-background;
+            .linear-gradient(@box-background, #DDD);
+            border-left: 1px solid #c6c6c6;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #c6c6c6;
+            color: #777;
+            text-shadow: 0px 1px 0px rgba(255,255,255,0.80);
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .nav-row:hover {
+            background: rgba(225,225,225,1);
+        }
+
+        .nav-row {
+            cursor: pointer;
+            background: none;
+            overflow: hidden;
+            padding: 4px;
+            height: 20px;
+            position: relative;
+
+            span {
+                white-space: nowrap;
+                max-width: 200px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                display: block;
+                top: 4px;
+                left: 30px;
+                position: absolute;
+            }
+
+            .icon-remove {
+               .icon-style;
+            }
+            .icon-remove:hover {
+                color: red;
+            }
+            .icon-sitemap {
+                .icon-style(5px, 25px);
+            }
+            .icon-sitemap:hover {
+                color: blue;
+            }
+            .icon-plus {
+                color: @icon-color;
+            }
+            .icon-plus:hover {
+                color: green;
+            }
+        }
+    }
+}
+
+.icon-double-angle-up {
+    top: 5px;
+    right: 15px;
+    position: absolute;
+    cursor: pointer;
+}
+
+.icon-double-angle-down {
+    top: 5px;
+    right: 15px;
+    position: absolute;
+    cursor: pointer;
+}
+

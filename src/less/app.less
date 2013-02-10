@@ -1,0 +1,98 @@
+@import "lib.less";
+
+@font: 'Source Code Pro', sans-serif;
+
+body, html {
+    font-family: @font;
+    font-weight: 400;
+    font-size: 12px;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#auto {
+    .width-height;
+    margin: -40px 0 -24px 0;
+    padding: 40px 0 24px 0;
+    .box-sizing;
+    overflow: hidden;
+}
+
+#contents {
+    .width-height;
+    overflow: hidden;
+}
+
+a {
+    color: black;
+}
+
+a :visited {
+    color: grey;
+}
+
+.diagram-canvas {
+    bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#main {
+    left: 300px;
+    position: relative;
+    overflow: hidden;
+    .width-height;
+}
+
+[class^="icon-edit-"], [class*=" icon-edit-"] {
+    background-position: left center;
+    padding-left: 4px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: text-bottom;
+    line-height: 14px;
+    background-repeat: no-repeat;
+    background-image: url('../img/ecore-icons.png');
+    background-position: 0px 20px;
+}
+
+.icon-edit-EPackage {
+    background-position: 0px 0px;
+}
+
+.icon-edit-EClass {
+    background-position: -21px 0px;
+}
+
+.icon-edit-EDataType {
+    background-position: -83px 0px;
+}
+
+.icon-edit-EAttribute {
+    background-position: -62px -23px;
+}
+
+.icon-edit-EReference {
+    background-position: -39px -23px;
+}
+
+.icon-edit-EOperation {
+    background-position: -39px 0px;
+}
+
+.icon-edit-EEnum {
+    background-position: -21px -23px;
+}
+
+.icon-edit-EEnumLiteral {
+    background-position: -63px 0px;
+}
+

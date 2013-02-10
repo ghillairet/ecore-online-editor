@@ -1,0 +1,54 @@
+.width-height(@width: 100%, @height: 100%) {
+    width: @width;
+    height: @height;
+}
+
+.box-shadow-inset(@style, @color) {
+    -moz-box-shadow: inset @style @color;
+    -webkit-box-shadow: inset @style @color;
+    box-shadow: inset @style @color;
+}
+
+.box-shadow(@style, @color) {
+    -moz-box-shadow: @style @color;
+    -webkit-box-shadow: @style @color;
+    box-shadow: @style @color;
+}
+
+.linear-gradient(@from, @to) {
+    background: -webkit-gradient(linear, left top, left bottom, from(@from), to(@to));
+    background: -webkit-linear-gradient(top, @from, @to);
+    background: -moz-linear-gradient(top, @from, @to);
+    background: linear-gradient(top, @from, @to);
+}
+
+.box-sizing(@style: border-box) {
+    -moz-box-sizing: @style;
+    -webkit-box-sizing: @style;
+    box-sizing: @style;
+}
+
+.width-height(@width: 100%, @height: 100%) {
+    width: @width;
+    height: @height;
+}
+
+.icon-style(@top: 5px, @right: 5px) {
+    position: absolute;
+    top: @top;
+    right: @right;
+    display: block;
+    width: 14px;
+    height: 14px;
+    color: @icon-color;
+}
+
+.nav-display() {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-box-align: stretch;
+    display: -moz-box;
+    -moz-box-orient: vertical;
+    -moz-box-align: stretch;
+}
+

@@ -1,0 +1,223 @@
+body,
+html {
+  font-family: 'Source Code Pro', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+#auto {
+  width: 100%;
+  height: 100%;
+  margin: -40px 0 -24px 0;
+  padding: 40px 0 24px 0;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+#contents {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+a {
+  color: black;
+}
+a :visited {
+  color: grey;
+}
+.diagram-canvas {
+  bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+#main {
+  left: 300px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+[class^="icon-edit-"],
+[class*=" icon-edit-"] {
+  background-position: left center;
+  padding-left: 4px;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: text-bottom;
+  line-height: 14px;
+  background-repeat: no-repeat;
+  background-image: url('../img/ecore-icons.png');
+  background-position: 0px 20px;
+}
+.icon-edit-EPackage {
+  background-position: 0px 0px;
+}
+.icon-edit-EClass {
+  background-position: -21px 0px;
+}
+.icon-edit-EDataType {
+  background-position: -83px 0px;
+}
+.icon-edit-EAttribute {
+  background-position: -62px -23px;
+}
+.icon-edit-EReference {
+  background-position: -39px -23px;
+}
+.icon-edit-EOperation {
+  background-position: -39px 0px;
+}
+.icon-edit-EEnum {
+  background-position: -21px -23px;
+}
+.icon-edit-EEnumLiteral {
+  background-position: -63px 0px;
+}
+
+#navigator {
+  width: 280px;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  overflow: hidden;
+  background: #f5f5f5;
+  color: #000000;
+  -webkit-user-select: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-box-align: stretch;
+  display: -moz-box;
+  -moz-box-orient: vertical;
+  -moz-box-align: stretch;
+  -moz-box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.3);
+}
+#navigator .nav-header {
+  height: 50px;
+}
+#navigator .nav-header .nav-header-content {
+  top: 10px;
+  position: relative;
+  width: 100%;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+#navigator .nav-header .nav-header-content h3 {
+  position: absolute;
+  font-size: 14px;
+  line-height: 10px;
+  top: 3px;
+  margin: 0;
+}
+#navigator .nav-header .nav-header-content i {
+  position: absolute;
+  cursor: pointer;
+}
+#navigator .nav-header .nav-header-content .icon-double-angle-left {
+  right: 0;
+  cursor: pointer;
+}
+#navigator .nav-header .nav-header-content .icon-double-angle-right {
+  right: 0;
+  cursor: pointer;
+}
+#navigator .nav-box {
+  overflow: hidden;
+  position: relative;
+  left: 0;
+  width: 100%;
+  padding: 2px;
+}
+#navigator .nav-box .nav-box-header {
+  line-height: 20px;
+  padding: 0 8px;
+  margin: 0;
+  background: #f1f1f1;
+  background: -webkit-gradient(linear, left top, left bottom, from(#f1f1f1), to(#dddddd));
+  background: -webkit-linear-gradient(top, #f1f1f1, #dddddd);
+  background: -moz-linear-gradient(top, #f1f1f1, #dddddd);
+  background: linear-gradient(top, #f1f1f1, #dddddd);
+  border-left: 1px solid #c6c6c6;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #c6c6c6;
+  color: #777;
+  text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 11px;
+}
+#navigator .nav-box .nav-row:hover {
+  background: #e1e1e1;
+}
+#navigator .nav-box .nav-row {
+  cursor: pointer;
+  background: none;
+  overflow: hidden;
+  padding: 4px;
+  height: 20px;
+  position: relative;
+}
+#navigator .nav-box .nav-row span {
+  white-space: nowrap;
+  max-width: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: block;
+  top: 4px;
+  left: 30px;
+  position: absolute;
+}
+#navigator .nav-box .nav-row .icon-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: block;
+  width: 14px;
+  height: 14px;
+  color: #696969;
+}
+#navigator .nav-box .nav-row .icon-remove:hover {
+  color: red;
+}
+#navigator .nav-box .nav-row .icon-sitemap {
+  position: absolute;
+  top: 5px;
+  right: 25px;
+  display: block;
+  width: 14px;
+  height: 14px;
+  color: #696969;
+}
+#navigator .nav-box .nav-row .icon-sitemap:hover {
+  color: blue;
+}
+#navigator .nav-box .nav-row .icon-plus {
+  color: #696969;
+}
+#navigator .nav-box .nav-row .icon-plus:hover {
+  color: green;
+}
+.icon-double-angle-up {
+  top: 5px;
+  right: 15px;
+  position: absolute;
+  cursor: pointer;
+}
+.icon-double-angle-down {
+  top: 5px;
+  right: 15px;
+  position: absolute;
+  cursor: pointer;
+}
