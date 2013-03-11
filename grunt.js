@@ -4,7 +4,7 @@ module.exports = function(grunt) {
         watch: {
             scripts: {
                 files: 'src/js/**/*.js',
-                tasks: ['concat'],
+                tasks: ['build'],
                 options: {
                     interrupt: true
                 }
@@ -15,9 +15,13 @@ module.exports = function(grunt) {
             dist: {
                 src: [
                     'build/start.js',
-                    'src/js/diagram/shapes/EAttribute.shape.js',
-                    'src/js/diagram/shapes/EOperation.shape.js',
-                    'src/js/diagram/shapes/EClass.shape.js',
+                    'src/js/diagram/connections/Connections.js',
+                    'src/js/diagram/shapes/EEnumShape.js',
+                    'src/js/diagram/shapes/EDataTypeShape.js',
+                    'src/js/diagram/shapes/EAttributeShape.js',
+                    'src/js/diagram/shapes/EOperationShape.js',
+                    'src/js/diagram/shapes/EClassShape.js',
+                    'src/js/diagram/shapes/EPackageShape.js',
                     'src/js/diagram/EcoreDiagram.js',
                     'src/js/views/navigator/box.js',
                     'src/js/views/navigator/header.js',
@@ -54,7 +58,7 @@ module.exports = function(grunt) {
     });
 
     grunt.loadNpmTasks('grunt-contrib-less');
+    grunt.loadNpmTasks('grunt-contrib-watch');
 
     grunt.registerTask('build', 'concat min less');
-    grunt.loadNpmTasks('grunt-contrib-watch');
 };

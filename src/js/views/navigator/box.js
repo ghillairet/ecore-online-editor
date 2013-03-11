@@ -1,3 +1,6 @@
+/**
+ * @name NavBox
+ */
 var NavBox = Backbone.View.extend({
     template: _.template('<div class="nav-box"></div>'),
     templateHeader: _.template('<div class="nav-box-header"><%= title %><i class="icon-large"></i></div>'),

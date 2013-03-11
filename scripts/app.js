@@ -7,7 +7,52 @@ jQuery(function() {
 
 
 
-var EAttributeShape = Ds.Label.extend({
+var EReferenceConnection = Ds.Connection.extend({
+    figure: {
+        stroke: 'black',
+        'stroke-width': 2
+    },
+    end: {
+        type: 'basic'
+    },
+    labels: [
+        { text: 'property', position: 'end' }
+    ],
+    initialize: function(attributes) {
+        if (attributes.model) {
+            this.model = attributes.model;
+            this.labels[0].set('text', this.model.get('name'));
+        }
+    }
+});
+
+var ESuperTypesConnection = Ds.Connection.extend({
+    figure: {
+        stroke: 'black',
+        'stroke-width': 2
+    },
+    end: {
+        fill: 'white',
+        type: 'basic'
+    }
+});
+
+
+
+// EEnumLabel
+
+var EEnumLabel = {
+    figure: {
+        type: 'text',
+        text: 'EEnum',
+        height: 40,
+        'font-size': 14
+    }
+};
+
+// EEnumLiteralShape
+
+var EEnumLiteralShape = Ds.Label.extend({
     resizable: false,
     draggable: false,
 
@@ -17,6 +62,155 @@ var EAttributeShape = Ds.Label.extend({
         height: 20,
         stroke: 'blue',
         position: 'center-left'
+    }
+});
+
+var EEnumCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
+
+    figure: {
+        type: 'rect',
+        height: 20,
+        fill: 'white',
+        'fill-opacity': 0,
+        stroke: '#D8D8D1',
+        'stroke-width': 2
+    },
+
+    layout: {
+        type: 'grid',
+        hgap: 5,
+        vgap: 5,
+        columns: 1
+    },
+
+    accepts: [
+        EEnumLiteralShape
+    ]
+
+});
+
+
+// EEnumShape
+
+var EEnumShape = Ds.Shape.extend({
+    figure: {
+        type: 'rect',
+        width: 100,
+        height: 50,
+        fill: '235-#F9F9D8-#FFFFFF',
+        opacity: 1,
+        stroke: '#D8D8D1',
+        'stroke-width': 2,
+        'stroke-opacity': 1
+    },
+
+    layout: {
+        type: 'flex',
+        columns: 1,
+        stretch: true
+    },
+
+    children: [
+        EEnumLabel,
+        EEnumCompartment
+    ],
+
+    initialize: function(attributes) {
+        if (!this.diagram) return; // dummies
+
+        if (attributes.model) {
+            this.model = attributes.model;
+        } else {
+            this.model = Ecore.EEnum.create({ name: 'EEnum' });
+            this.diagram.model.get('eClassifiers').add(this.model);
+        }
+    }
+});
+
+
+
+
+var EDataTypeLabel = {
+    figure: {
+        type: 'text',
+        text: 'EDataType',
+        height: 30,
+        'font-size': 14
+    }
+};
+
+var EDataTypeCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
+
+    figure: {
+        type: 'rect',
+        height: 20,
+        fill: 'white',
+        'fill-opacity': 0,
+        stroke: '#D8D8D1',
+        'stroke-width': 2
+    }
+
+});
+
+var EDataTypeShape = Ds.Shape.extend({
+    figure: {
+        type: 'rect',
+        width: 100,
+        height: 30,
+        fill: '235-#F9F9D8-#FFFFFF',
+        opacity: 1,
+        stroke: '#D8D8D1',
+        'stroke-width': 2,
+        'stroke-opacity': 1
+    },
+
+    layout: {
+        type: 'grid',
+        columns: 1
+    },
+
+    children: [
+        EDataTypeLabel,
+        EDataTypeCompartment
+    ],
+
+    initialize: function(attributes) {
+        if (!this.diagram) return; // dummies
+
+        if (attributes.model) {
+            this.model = attributes.model;
+        } else {
+            this.model = Ecore.EDataType.create({ name: 'EDataType' });
+            this.diagram.model.get('eClassifiers').add(this.model);
+        }
+    }
+});
+
+
+var EAttributeShape = Ds.Label.extend({
+    resizable: false,
+    draggable: false,
+    selectable: false,
+
+    figure: {
+        type: 'text',
+        text: 'name: EString',
+        height: 20,
+        width: 100,
+        stroke: 'blue',
+        position: 'left'
+    },
+
+    gridData: {
+        horizontalAlignment: 'beginning',
+        verticalAlignment: 'center',
+        grabExcessHorizontalSpace: true
     },
 
     initialize: function(attributes) {
@@ -28,28 +222,95 @@ var EAttributeShape = Ds.Label.extend({
 
         var text = this.model.get('name') + ' : ' + this.model.get('eType').get('name');
         this.setText(text);
+
+        this.on('change:text', function(label) {
+            var text = label.getText();
+            var split = text.split(':');
+            var name = split[0].trim();
+            var type;
+            if (split.length > 1) {
+                type = split[1].trim();
+            }
+            this.model.set('name', name);
+        }, this);
     }
 });
 
-var EAttributeCompartment = {
-    compartment: true,
+var EAttributeCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
 
     figure: {
         type: 'rect',
         height: 20,
-        fill: 'none',
+        width: 100,
+        fill: '235-#F9F9D8-#FFFFFF',
+        'fill-opacity': 1,
         stroke: '#D8D8D1',
         'stroke-width': 2
     },
 
     layout: {
-        type: 'flex',
-        columns: 1,
-        stretch: false
+        type: 'grid',
+        marginHeight: 0,
+        marginWidth: 0,
+        columns: 1
     },
 
-    accepts: [ EAttributeShape ]
-};
+    gridData: {
+        horizontalAlignment: 'fill',
+        verticalAlignment: 'fill',
+        grabExcessHorizontalSpace: true
+    },
+
+    accepts: [ EAttributeShape ],
+
+    initialize: function() {
+        this.on('click', this.addElement);
+        this.on('mouseover', this.handleMouseOver);
+        this.on('mouseout', this.handleMouseOut);
+    },
+
+    handleMouseOut: function() {
+        this.set('cursor', 'default');
+    },
+
+    handleMouseOver: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        var fnShape;
+
+        if (selected) {
+            fnShape = selected.shape;
+            if (this.canAdd(fnShape)) {
+                this.set('cursor', 'copy');
+            } else {
+                this.set('cursor', 'no-drop');
+            }
+        }
+    },
+
+    addElement: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        if (selected) {
+            if (this.canAdd(selected.shape)) {
+                var shape = new selected.shape({});
+                this.add(shape);
+                this.parent.render();
+                palette.selected = null;
+
+                var eClass = this.parent.model;
+                if (shape instanceof EAttributeShape) {
+                    eClass.get('eStructuralFeatures').add(shape.model);
+                } else if (shape instanceof EOperationShape) {
+                    eClass.get('eOperations').add(shape.model);
+                }
+            }
+        }
+    }
+});
 
 
 
@@ -61,30 +322,99 @@ var EOperationShape = Ds.Label.extend({
         type: 'text',
         text: 'op(): EString',
         height: 20,
+        width: 100,
         stroke: 'blue',
-        position: 'center-left'
+        position: 'left'
+    },
+
+    gridData: {
+        horizontalAlignment: 'beginning',
+        verticalAlignment: 'center',
+        grabExcessHorizontalSpace: true
+    },
+
+    initialize: function(attributes) {
+        if (attributes.model) {
+            this.model = attributes.model;
+        } else {
+            this.model = Ecore.EOperation.create({ name: 'name', eType: Ecore.EString });
+        }
+
+        var type = this.model.get('eType');
+        type = type ? type.get('name') : '';
+        var text = this.model.get('name') + '(): ' + type;
+        this.setText(text);
     }
 });
 
-var EOperationCompartment = {
-    compartment: true,
+var EOperationCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
 
     figure: {
         type: 'rect',
         height: 20,
-        fill: 'none',
+        width: 100,
+        fill: 'white',
+        'fill-opacity': 0,
         stroke: 'none',
         'stroke-width': 2
     },
 
     layout: {
-        type: 'flex',
-        columns: 1,
-        stretch: false
+        type: 'grid',
+        columns: 1
     },
 
-    accepts: [ EOperationShape ]
-};
+    gridData: {
+        grabExcessHorizontalSpace: true,
+        grabExcessVerticalSpace: true,
+        verticalAlignment: 'fill',
+        horizontalAlignment: 'fill'
+    },
+
+    accepts: [ EOperationShape ],
+
+    initialize: function() {
+        this.on('click', this.addElement);
+        this.on('mouseover', this.handleMouseOver);
+        this.on('mouseout', this.handleMouseOut);
+    },
+
+    handleMouseOut: function() {
+        this.set('cursor', 'default');
+    },
+
+    handleMouseOver: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        var fnShape;
+
+        if (selected) {
+            fnShape = selected.shape;
+            if (this.canAdd(fnShape)) {
+                this.set('cursor', 'copy');
+            } else {
+                this.set('cursor', 'no-drop');
+            }
+        }
+    },
+
+    addElement: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        if (selected) {
+            if (this.canAdd(selected.shape)) {
+                var shape = new selected.shape({});
+                this.add(shape);
+                this.parent.render();
+                palette.selected = null;
+            }
+        }
+    }
+
+});
 
 
 
@@ -93,8 +423,15 @@ var EClassLabel = {
         type: 'text',
         text: 'EClass',
         height: 30,
+        width: 30,
         'font-size': 14
+    },
+
+    gridData: {
+        horizontalAlignment: 'center',
+        grabExcessHorizontalSpace: true
     }
+
 };
 
 var EClassShape = Ds.Shape.extend({
@@ -110,9 +447,12 @@ var EClassShape = Ds.Shape.extend({
     },
 
     layout: {
-        type: 'flex',
+        type: 'grid',
         columns: 1,
-        stretch: true
+        hgap: 0,
+        vgap: 0,
+        marginHeight: 0,
+        marginWidth: 0
     },
 
     children: [
@@ -122,6 +462,7 @@ var EClassShape = Ds.Shape.extend({
     ],
 
     initialize: function(attributes) {
+        if (!this.diagram) return; // dummies
         if (attributes.model) {
             this.model = attributes.model;
             this.model.shape = this;
@@ -133,24 +474,134 @@ var EClassShape = Ds.Shape.extend({
         }
 
         this.children[0].setText(this.model.get('name'));
+        this.on('click', this.toFront);
+        this.on('mousedown', this.doConnect);
+    },
+
+    doConnect: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        if (selected && selected.connection) {
+            this.dragConnection(e, selected.connection);
+            this.on('connect:source', function() { palette.selected = null; });
+        }
     },
 
     createContent: function() {
-        var compartment = this.children[1];
-//        _.each(this.model.get('eAttributes'), function(a) {
-//            var shape = this.diagram.createShape(EAttributeShape, { model: a });
-//            compartment.add(shape);
-//        }, this);
+        _.each(this.model.get('eAttributes'), function(a) {
+            var shape = this.diagram.createShape(EAttributeShape, { model: a });
+            this.children[1].add(shape);
+        }, this);
+
+        this.model.get('eOperations').each(function(o) {
+            var shape = this.diagram.createShape(EOperationShape, { model: o });
+            this.children[2].add(shape);
+        }, this);
     }
 
 });
 
 
 
+var EPackageCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
+
+    figure: {
+        type: 'rect',
+        fill: '270-#B8A8C8-#FFF',
+        height: 100
+    },
+
+    initialize: function() {
+        this.on('click', function() { this.parent.select(); }, this);
+    }
+});
+
+var EPackageHeadShape = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
+
+    figure: {
+        type: 'rect',
+        height: 20,
+        fill: 'none',
+        stroke: 'none'
+    },
+
+    layout: { type: 'xy' },
+
+    children: [
+        {
+            draggable: false,
+            selectable: false,
+            resizable: false,
+
+            figure: {
+                type: 'rect',
+                height: 20,
+                width: 40,
+                x: 0,
+                y: 0,
+                fill: '#B8A8C8'
+            },
+
+//            layout: { type: 'xy' },
+
+            children: [
+/*                {
+                    figure: {
+                        x: 0, y: 0,
+                        type: 'text',
+                        height: 20,
+                        width: 60,
+                        'font-size': 14,
+                        text: 'My Package'
+                    }
+                }
+*/          ]
+        }
+    ]
+});
+
+var EPackageShape = Ds.Shape.extend({
+
+    figure: {
+        type: 'rect',
+        fill: 'yellow',
+        'fill-opacity': 0,
+        stroke: 'none',
+        height: 120,
+        width: 160
+    },
+
+    initialize: function(attributes) {
+        if (!this.diagram) return;
+
+        var head = new EPackageHeadShape({ diagram: this.diagram });
+        var body = new EPackageCompartment({ diagram: this.diagram });
+        this.add(head);
+        this.add(body);
+        this.layout.north = head;
+        this.layout.center = body;
+
+        this.on('click', this.select);
+    },
+
+    layout: {
+        type: 'border',
+        vgap: 0,
+        hgap: 0
+    }
+});
+
+
 var current = { x: 0, y: 100 };
 function layout() {
-    var ws = 200, we = 1200,
-        pad = 250;
+    var ws = 10, we = 800,
+        pad = 150;
 
     if (we > (current.x + pad)) {
         current.x = current.x + pad;
@@ -163,13 +614,18 @@ function layout() {
 }
 
 var EcoreDiagram = Ds.Diagram.extend({
-    el: 'diagram',
+    width: 2000,
+    height: 2000,
 
     children: [
-        EClassShape
+        EPackageShape,
+        EClassShape,
+        EDataTypeShape,
+        EEnumShape
     ],
 
     initialize: function(attributes) {
+        _.bindAll(this);
         if (attributes.model) {
             this.model = attributes.model;
             this.createContent();
@@ -183,13 +639,44 @@ var EcoreDiagram = Ds.Diagram.extend({
             var res = resourceSet.create({ uri: 'sample.ecore' });
             res.get('contents').add(this.model);
         }
+
+        this.on('click', this.addFromPalette);
+        this.on('click', function() { Workbench.palette.selected = null; });
+        this.on('mouseover', this.handleMouseOver);
+    },
+
+    handleMouseOver: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+
+        if (selected) {
+            if ( _.contains(['EClass', 'EDataType', 'EEnum', 'EPackage'], selected.title) ) {
+                this.wrapper.attr('cursor', 'copy');
+            } else {
+                this.wrapper.attr('cursor', 'no-drop');
+            }
+        } else {
+            this.wrapper.attr('cursor', 'default');
+        }
+    },
+
+    addFromPalette: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+
+        if (selected && typeof selected.shape === 'function') {
+            this.createShape(selected.shape, Ds.Point.get(this, e)).render();
+            palette.selected = null;
+        }
     },
 
     createContent: function() {
         this.model.get('eClassifiers').each(function(c) {
             if (c.isTypeOf('EClass')) {
                 var position = layout();
-                this.createShape(EClassShape, { model: c, x: position.x, y: position.y });
+                //this.createShape(EClassShape, { model: c, x: position.x, y: position.y });
+                var x = 100, y = 100;
+                this.createShape(EClassShape, { model: c, x: x, y: x });
             }
         }, this);
     },
@@ -221,6 +708,9 @@ var EcoreDiagram = Ds.Diagram.extend({
 });
 
 
+/**
+ * @name NavBox
+ */
 var NavBox = Backbone.View.extend({
     template: _.template('<div class="nav-box"></div>'),
     templateHeader: _.template('<div class="nav-box-header"><%= title %><i class="icon-large"></i></div>'),
@@ -322,10 +812,20 @@ var NavigatorHeaderView = Backbone.View.extend({
 var PaletteView = NavBox.extend({
     title: 'Palette',
 
-    items: [
-        'EPackage', 'EClass', 'EEnum', 'EEnumLiteral', 'EDataType',
-        'EAttribute', 'EReference', 'EOperation'
-    ],
+    shapes: {
+        'EPackage': EPackageShape,
+        'EClass': EClassShape,
+        'EEnum': EEnumShape,
+        'EEnumLiteral': EEnumLiteralShape,
+        'EDataType': EDataTypeShape,
+        'EAttribute': EAttributeShape,
+        'EOperation': EOperationShape
+    },
+
+    connections: {
+        'EReference': EReferenceConnection,
+        'ESuperTypes': ESuperTypesConnection
+    },
 
     initialize: function(attributes) {
         _.bindAll(this);
@@ -335,8 +835,14 @@ var PaletteView = NavBox.extend({
     render: function() {
         NavBox.prototype.render.apply(this);
 
-        _.each(this.items, function(item) {
-            var view = new PaletteItemView({ shape: item });
+        _.each(this.shapes, function(shape, title) {
+            var view = new PaletteItemView({ palette: this, shape: shape, title: title });
+            this.views.push(view);
+            this.$el.append(view.render().$el);
+        }, this);
+
+        _.each(this.connections, function(connection, title) {
+            var view = new PaletteItemView({ palette: this, connection: connection, title: title });
             this.views.push(view);
             this.$el.append(view.render().$el);
         }, this);
@@ -351,14 +857,24 @@ var PaletteView = NavBox.extend({
  *
  */
 var PaletteItemView = Backbone.View.extend({
-    template: _.template('<div class="nav-row"><i class="icon-edit-<%= shape %>"></i><span><%= shape %></span></div>'),
+    template: _.template('<div class="nav-row"><i class="icon-edit-<%= title %>"></i><span><%= title %></span></div>'),
+    events: {
+        'click': 'select'
+    },
     initialize: function(attributes) {
+        _.bindAll(this);
+        this.palette = attributes.palette;
         this.shape = attributes.shape;
+        this.connection = attributes.connection;
+        this.title = attributes.title;
     },
     render: function() {
-        var html = this.template({ shape: this.shape });
+        var html = this.template({ title: this.title });
         this.setElement(html);
         return this;
+    },
+    select: function() {
+        this.palette.selected = this;
     }
 });
 
@@ -457,7 +973,8 @@ var ResourceView = Backbone.View.extend({
 
         return this;
     },
-    openEditor: function() {
+    openEditor: function(e) {
+        if (e) e.stopPropagation();
         if (this.model) {
             this.trigger('open:editor', this.model);
         }
@@ -465,7 +982,8 @@ var ResourceView = Backbone.View.extend({
     createResource: function() {
         this.trigger('create', this);
     },
-    openDiagram: function() {
+    openDiagram: function(e) {
+        if (e) e.stopPropagation();
         if (this.model) {
             this.trigger('open:diagram', this.model);
         }
@@ -587,7 +1105,6 @@ var CreateResourceModal = ModalView.extend({
         this.$form.append(cURI).append(cElt);
 
         this.$select = $('#selectElement', this.$form);
-        console.log(this.model);
         this.classes = this.model.elements('EClass');
         this.classes = _.filter(this.classes, function(c) { return !c.get('abstract'); });
 
@@ -627,22 +1144,73 @@ var PropertyWindow = Ecore.Edit.Window.extend({
     el: '#property-window',
     title: 'Property',
     draggable: true,
-    content: new Ecore.Edit.PropertySheet()
+    content: new Ecore.Edit.PropertySheet(),
+    render: function() {
+        this.content.model = this.model;
+        return Ecore.Edit.Window.prototype.render.apply(this);
+    }
 });
 
 
+
+var EcoreDiagramEditor = Ecore.Edit.TabEditor.extend({
+    tmpl: _.template('<div id="diagram-<%= id %>" style="width: 100%; height: 100%;"></div>'),
+
+    initialize: function(attributes) {
+        _.bindAll(this);
+        this.title = this.getTitle() + '.diagram';
+        Ecore.Edit.TabEditor.prototype.initialize.apply(this, [attributes]);
+
+        this.diagram = new EcoreDiagram({ model: this.model.get('contents').first() });
+    },
+    renderContent: function() {
+        if (!this.$diagram) {
+            this.$diagram = $(this.tmpl({ id: this.cid }));
+            this.$content.append(this.$diagram);
+            this.diagram.setElement(this.$diagram[0]);
+        }
+    },
+    show: function() {
+        return Ecore.Edit.TabEditor.prototype.show.apply(this);
+    }
+});
+
+var EcoreTreeEditor = Ecore.Edit.TreeTabEditor.extend({
+    editElement: function() {
+        Workbench.properties.model = this.tree.selected.model;
+        Workbench.properties.render();
+    }
+});
 
 var EcoreTabPanel = Ecore.Edit.TabPanel.extend({
     el: '#main',
 
     open: function(model, diagram) {
-        var editor = this.getByModel(model);
+        var editor = this.find(model, diagram);
         if (!editor) {
-            editor = new Ecore.Edit.TreeTabEdior({ model: model });
+            if (diagram)
+                editor = new EcoreDiagramEditor({ model: model });
+            else
+                editor = new EcoreTreeEditor({ model: model });
             this.add(editor);
             editor.render();
         }
         editor.show();
+
+        if (diagram) editor.diagram.render();
+    },
+
+    find: function(model, diagram) {
+        return _.find(this.editors, function(editor) {
+            if (editor.model === model) {
+                if (diagram) {
+                    return typeof editor.diagram === 'object';
+                } else {
+                    return typeof editor.diagram !== 'object';
+                }
+            }
+            else return false;
+        });
     },
 
     expand: function() {
@@ -715,8 +1283,8 @@ SampleResource.get('contents').add(SamplePackage);
 Workbench.properties = new PropertyWindow();
 Workbench.editorTab = new EcoreTabPanel();
 Workbench.navigator = new NavigatorView({ model: resourceSet });
+Workbench.palette = Workbench.navigator.paletteView;
 
-//Workbench.editorTab.render().open(EcoreResource);
 Workbench.navigator.render();
 
 Workbench.navigator.on('open:editor', function(m) {
@@ -728,15 +1296,19 @@ Workbench.navigator.on('open:diagram', function(m) {
 }, Workbench);
 
 Workbench.navigator.on('hide', function() {
-    $('.part').animate({ left: '30px' }, 100);
+    $('#main').animate({ left: '50px' }, 100);
 }, Workbench);
 
 Workbench.navigator.on('show', function() {
-    $('.part').animate({ left: '280px' }, 100);
+    $('#main').animate({ left: '300px' }, 100);
 }, Workbench);
 
 Workbench.editorTab.on('select', function(m) {
     this.properties.content.model = m;
+}, Workbench);
+
+Workbench.properties.content.on('change', function() {
+    console.log(Workbench.editorTab);
 }, Workbench);
 
 resourceSet.on('add', function(m) {

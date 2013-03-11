@@ -92,7 +92,8 @@ var ResourceView = Backbone.View.extend({
 
         return this;
     },
-    openEditor: function() {
+    openEditor: function(e) {
+        if (e) e.stopPropagation();
         if (this.model) {
             this.trigger('open:editor', this.model);
         }
@@ -100,7 +101,8 @@ var ResourceView = Backbone.View.extend({
     createResource: function() {
         this.trigger('create', this);
     },
-    openDiagram: function() {
+    openDiagram: function(e) {
+        if (e) e.stopPropagation();
         if (this.model) {
             this.trigger('open:diagram', this.model);
         }

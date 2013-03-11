@@ -5,10 +5,20 @@
 var PaletteView = NavBox.extend({
     title: 'Palette',
 
-    items: [
-        'EPackage', 'EClass', 'EEnum', 'EEnumLiteral', 'EDataType',
-        'EAttribute', 'EReference', 'EOperation'
-    ],
+    shapes: {
+        'EPackage': EPackageShape,
+        'EClass': EClassShape,
+        'EEnum': EEnumShape,
+        'EEnumLiteral': EEnumLiteralShape,
+        'EDataType': EDataTypeShape,
+        'EAttribute': EAttributeShape,
+        'EOperation': EOperationShape
+    },
+
+    connections: {
+        'EReference': EReferenceConnection,
+        'ESuperTypes': ESuperTypesConnection
+    },
 
     initialize: function(attributes) {
         _.bindAll(this);
@@ -18,8 +28,14 @@ var PaletteView = NavBox.extend({
     render: function() {
         NavBox.prototype.render.apply(this);
 
-        _.each(this.items, function(item) {
-            var view = new PaletteItemView({ shape: item });
+        _.each(this.shapes, function(shape, title) {
+            var view = new PaletteItemView({ palette: this, shape: shape, title: title });
+            this.views.push(view);
+            this.$el.append(view.render().$el);
+        }, this);
+
+        _.each(this.connections, function(connection, title) {
+            var view = new PaletteItemView({ palette: this, connection: connection, title: title });
             this.views.push(view);
             this.$el.append(view.render().$el);
         }, this);
@@ -34,14 +50,24 @@ var PaletteView = NavBox.extend({
  *
  */
 var PaletteItemView = Backbone.View.extend({
-    template: _.template('<div class="nav-row"><i class="icon-edit-<%= shape %>"></i><span><%= shape %></span></div>'),
+    template: _.template('<div class="nav-row"><i class="icon-edit-<%= title %>"></i><span><%= title %></span></div>'),
+    events: {
+        'click': 'select'
+    },
     initialize: function(attributes) {
+        _.bindAll(this);
+        this.palette = attributes.palette;
         this.shape = attributes.shape;
+        this.connection = attributes.connection;
+        this.title = attributes.title;
     },
     render: function() {
-        var html = this.template({ shape: this.shape });
+        var html = this.template({ title: this.title });
         this.setElement(html);
         return this;
+    },
+    select: function() {
+        this.palette.selected = this;
     }
 });
 

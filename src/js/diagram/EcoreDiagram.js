@@ -1,8 +1,8 @@
 
 var current = { x: 0, y: 100 };
 function layout() {
-    var ws = 200, we = 1200,
-        pad = 250;
+    var ws = 10, we = 800,
+        pad = 150;
 
     if (we > (current.x + pad)) {
         current.x = current.x + pad;
@@ -15,13 +15,18 @@ function layout() {
 }
 
 var EcoreDiagram = Ds.Diagram.extend({
-    el: 'diagram',
+    width: 2000,
+    height: 2000,
 
     children: [
-        EClassShape
+        EPackageShape,
+        EClassShape,
+        EDataTypeShape,
+        EEnumShape
     ],
 
     initialize: function(attributes) {
+        _.bindAll(this);
         if (attributes.model) {
             this.model = attributes.model;
             this.createContent();
@@ -35,13 +40,44 @@ var EcoreDiagram = Ds.Diagram.extend({
             var res = resourceSet.create({ uri: 'sample.ecore' });
             res.get('contents').add(this.model);
         }
+
+        this.on('click', this.addFromPalette);
+        this.on('click', function() { Workbench.palette.selected = null; });
+        this.on('mouseover', this.handleMouseOver);
+    },
+
+    handleMouseOver: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+
+        if (selected) {
+            if ( _.contains(['EClass', 'EDataType', 'EEnum', 'EPackage'], selected.title) ) {
+                this.wrapper.attr('cursor', 'copy');
+            } else {
+                this.wrapper.attr('cursor', 'no-drop');
+            }
+        } else {
+            this.wrapper.attr('cursor', 'default');
+        }
+    },
+
+    addFromPalette: function(e) {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+
+        if (selected && typeof selected.shape === 'function') {
+            this.createShape(selected.shape, Ds.Point.get(this, e)).render();
+            palette.selected = null;
+        }
     },
 
     createContent: function() {
         this.model.get('eClassifiers').each(function(c) {
             if (c.isTypeOf('EClass')) {
                 var position = layout();
-                this.createShape(EClassShape, { model: c, x: position.x, y: position.y });
+                //this.createShape(EClassShape, { model: c, x: position.x, y: position.y });
+                var x = 100, y = 100;
+                this.createShape(EClassShape, { model: c, x: x, y: x });
             }
         }, this);
     },

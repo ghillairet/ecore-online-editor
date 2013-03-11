@@ -79,12 +79,14 @@ function draggable(element) {
     });
 }
 
-function resizable(wd, element) {
-    var resizer = $('div[class*="window-resize"]', $(element));
+function resizable(view, resizer) {
+    var element = view.$el[0];
 
     resizer.mousedown(function(e) {
         element.startX = e.clientX; // + window.pageXOffset - element.offsetLeft;
         element.startY = e.clientY; // + window.pageYOffset - element.offsetTop;
+        element.ow = element.offsetWidth;
+        element.oh = element.offsetHeight;
 
         window.addEventListener('mousemove', move, false);
         window.addEventListener('mouseup', function() {
@@ -92,20 +94,18 @@ function resizable(wd, element) {
         }, true);
 
         function move(e) {
-            element.ow = element.offsetWidth;
-            element.oh = element.offsetHeight;
-
             var dX = e.clientX - element.startX;
             var dY = e.clientY - element.startY;
 
             element.startX += dX; // + window.pageXOffset - element.offsetLeft;
             element.startY += dY; // + window.pageYOffset - element.offsetTop;
 
+            element.ow += dX;
+            element.oh += dY;
             var position = element.style.position;
             element.style.position = 'absolute';
-            var old = element.ow;
-            element.style.width = (element.ow + dX * 0.9) + 'px';
-            //                element.style.height = (element.oh + dY) + 'px';
+            element.style.width = element.ow * 0.9 + 'px';
+            element.style.height = element.oh * 0.9 + 'px';
             element.style.position = position;
         }
     });
@@ -156,16 +156,16 @@ Edit.Window = Backbone.View.extend({
         var html = this._template({ title: this.title });
 
         this.$el.addClass('window');
-        this.$el.css('z-index', '1000');
+        this.$el.removeClass('hidden');
         this.$el.append(html);
-        this.$header = $('div > div[class*="window-header"]', this.$el);
+        this.$header = $('.window-header', this.$el);
 
         $('span[class*="window-actions"]', this.$el)
             .append(this._minimizeActionTemplate())
             .append(this._maximizeActionTemplate())
             .append(this._closeActionTemplate());
 
-        $('div[class*="window-footer"]', this.$el).append(this._resizeHandleTemplate());
+        $('.window-footer', this.$el).append(this._resizeHandleTemplate());
 
         this.$content = $('div > div[class*="window-content"]', this.$el);
         if (this.height)  {
@@ -177,11 +177,8 @@ Edit.Window = Backbone.View.extend({
             this.content.render();
         }
 
-        if (this.draggable) {
-            draggable( this.$el.get()[0] );
-        }
-
-        resizable(this, this.$el[0]);
+        if (this.draggable) draggable(this.$el[0]);
+        resizable(this, $('.window-resize', this.$el));
 
         return this;
     },
@@ -192,22 +189,33 @@ Edit.Window = Backbone.View.extend({
         }
         if (this.$el) {
             this.$el.children().remove();
-            this.$el.css('z-index', '-1');
+            this.$el.css('width', null);
+            this.$el.css('height', null);
         }
         return this;
     },
 
     close: function() {
         this.remove();
+        this.$el.addClass('hidden');
     },
 
     maximize: function() {
-        this.$el.css('left', '0');
-        this.$el.css('right', '0');
+        this.$el.ot = this.$el.css('top');
+        this.$el.ob = this.$el.css('bottom');
+        this.$el.or = this.$el.css('right');
+        this.$el.ol = this.$el.css('left');
+        this.$el.css('top', 10);
+        this.$el.css('bottom', 0);
+        this.$el.css('left', 0);
+        this.$el.css('right', 0);
     },
 
     minimize: function() {
-
+        if (this.$el.ot) this.$el.css('top', this.$el.ot);
+        if (this.$el.ob) this.$el.css('bottom', this.$el.ob);
+        if (this.$el.or) this.$el.css('right', this.$el.or);
+        if (this.$el.ol) this.$el.css('left', this.$el.ol);
     }
 });
 
@@ -346,11 +354,11 @@ Edit.DropDownItem = Backbone.View.extend({
 
 
 var TextValue = Backbone.View.extend({
-    template: _.template('<div contenteditable><%= value %></div>'),
+    template: '<div contenteditable></div>',
 
     render: function() {
-        var html = this.template({ value: this.model });
-        this.setElement(html);
+        this.setElement(this.template);
+        this.$el.append(String(this.model || 0));
 
         var view = this;
         this.$el.on('change', function() {
@@ -367,8 +375,24 @@ var SelectValue = Backbone.View.extend({
     templateOptions: _.template('<% _.each(options, function(option) { %> <option> <%= option.eClass ? Ecore.Edit.LabelProvider.getLabel(option) : option %></option> <% }); %>'),
 
     initialize: function(attributes) {
+        attributes || (attributes = {});
         this.value = attributes.value;
         this.options = attributes.options;
+    },
+
+    getLabel: function(value) {
+        if (value)
+            if (value.eClass)
+                return Edit.LabelProvider.getLabel(value);
+            else return value;
+        else return '';
+    },
+
+    getValue: function() {
+        var changed = $('option:selected', this.$el).val();
+        return _.find(this.options, function(opt) {
+            return this.getLabel(opt) === changed;
+        }, this);
     },
 
     render: function() {
@@ -378,14 +402,13 @@ var SelectValue = Backbone.View.extend({
         if (this.value === true || this.value === false) {
             this.$el.val(''+this.value);
         } else {
-            var val = this.value ? this.value.eClass ? Edit.LabelProvider.getLabel(this.value) : this.value : null;
-            this.$el.val(val);
+            this.$el.val(this.getLabel(this.value));
         }
 
         var view = this;
         this.$el.change(function() {
-            var changed = $('option:selected', view.$el).val();
-            view.trigger('change', changed);
+            var value = view.getValue();
+            view.trigger('change', value);
         });
 
         return this;
@@ -402,8 +425,7 @@ var SingleValueSelect = SelectValue.extend({
     render: function() {
         var html = this.template();
         this.setElement(html);
-        SelectValue.prototype.render.apply(this);
-        return this;
+        return SelectValue.prototype.render.apply(this);
     }
 });
 
@@ -473,8 +495,6 @@ Edit.PropertyRow = Backbone.View.extend({
                 view = new TextValue({ model: value });
                 view.on('change', function(changed) {
                     model.set(eFeature.get('name'), changed);
-                    model.trigger('change');
-                    model.eResource().trigger('change', model);
                 });
             }
         }
@@ -490,26 +510,27 @@ Edit.PropertyRow = Backbone.View.extend({
 
         view.on('change', function(changed) {
             model.set(eFeature.get('name'), changed);
-            model.trigger('change');
-            model.eResource().trigger('change', model);
         });
 
         return view;
     },
 
     renderEReference: function(model, eFeature, value) {
-        var view;
+        var view, changer;
         if (eFeature.get('upperBound') !== 1) {
-            view = new MultiValueSelect({
-                value: value,
-                options: this.options
-            });
+            view = new MultiValueSelect();
+            changer = function(changed) {
+                model.get(eFeature).add(changed);
+            };
         } else {
-            view = new SingleValueSelect({
-                value: value,
-                options: this.options
-            });
+            view = new SingleValueSelect();
+            changer = function(changed) {
+                model.set(eFeature.get('name'), changed);
+            };
         }
+        view.value = value;
+        view.options = this.options;
+        view.on('change', changer);
 
         return view;
     },
@@ -534,9 +555,6 @@ Edit.PropertyRow = Backbone.View.extend({
                 value: value,
                 options: this.options
             });
-            view.on('change', function(changed) {
-                console.log(changed);
-            });
         }
 
         if (view) {
@@ -559,19 +577,12 @@ Edit.PropertyRow = Backbone.View.extend({
 
 
 function getElements(eObject, eFeature) {
-    var options = [];
-    var value = eObject.get(eFeature);
-
-    if (value) {
-        var type = value.eClass;
-        var resourceSet = eObject.eResource().get('resourceSet');
-        var elements = resourceSet.elements();
-        options = _.filter(elements, function(e) {
-            return e.eClass === type; // || _.contains(e.eClass.get('eAllSuperTypes'), type);
-        });
-    }
-
-    return options;
+    var type = eFeature.get('eType');
+    var resourceSet = eObject.eResource().get('resourceSet');
+    var elements = resourceSet.elements();
+    return _.filter(elements, function(e) {
+        return e.isKindOf(type);
+    });
 }
 
 
@@ -679,25 +690,21 @@ Edit.Tab = Backbone.View.extend({
     },
 
     initialize: function(attributes) {
-        this.eid = attributes.eid;
-        this._rendered = false;
+        this.editor = attributes.editor;
+        this.isRender = false;
     },
     render: function() {
-        if (!this._rendered) {
-            var title = this.title();
-            var html = this.template({ id: this.eid, title: title });
+        if (!this.isRender) {
+            var title = this.editor.getTitle();
+            var html = this.template({ id: this.editor.cid, title: title });
             this.setElement(html);
-            this._rendered = true;
+            this.isRender = true;
         }
         return this;
     },
     remove: function() {
         this.trigger('remove');
         return Backbone.View.prototype.remove.apply(this);
-    },
-    title: function() {
-        var uri = this.model.get('uri');
-        return uri.slice(uri.lastIndexOf('/') + 1, uri.length);
     }
 });
 
@@ -708,13 +715,14 @@ Edit.Tab = Backbone.View.extend({
  *
  */
 Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
-    template: _.template('<tr class="tree-item-tr"></tr>'),
+    template: '<tr class="tree-item-tr"></tr>',
     table: '<table style="border-collapse; collapse; margin-left: 0px;"><tbody><tr></tr></tbody></table>',
     td: '<td class="tree-td"></td>',
 
     events: {
         'mouseover': 'highlight',
-        'mouseout': 'unhighlight'
+        'mouseout': 'unhighlight',
+        'click': 'select'
     },
 
     initialize: function(attributes) {
@@ -722,53 +730,51 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
         this.parent = attributes.parent;
         this.margin = attributes.margin;
         this.children = [];
-        _.bindAll(this, 'render', 'onClick', 'expand', 'collapse', 'highlight', 'unhighlight');
+        _.bindAll(this, 'render', 'select', 'expand', 'collapse', 'highlight', 'unhighlight');
     },
     render: function() {
-        var html = this.template();
-        this.remove();
-        this.setElement(html);
-
+        if (this.$el) {
+            this.$el.children().remove();
+        } else {
+            this.setElement(this.template);
+        }
         if (this.model) {
             this.$el.append(this._createLabelElemnt());
         } else {
             this.$el.append(this._createAddElement());
         }
-
         return this;
     },
     highlight: function() {
-        this.$el[0].style.background = 'rgba(255, 255, 102, 0.6)';
-        this.$el[0].style.cursor = 'pointer';
+        this.$el.css('background', 'rgba(255, 255, 102, 0.6)');
+        this.$el.css('cursor', 'pointer');
+        return this;
     },
     unhighlight: function() {
-        this.$el[0].style.background = 'rgba(255, 255, 255, 1)';
-        this.$el[0].style.cursor = 'auto';
+        if (this.tree.selected !== this) {
+            this.$el.css('background', 'rgba(255, 255, 255, 1)');
+        }
+        this.$el.css('cursor', 'auto');
+        return this;
     },
-    onClick: function() {
-        this.tree.setSelection(this);
+    select: function(e) {
+        if (e) e.stopImmediatePropagation();
+        if (this.$el) {
+            this.$el.css('background', 'rgba(255, 255, 102, 0.4)');
+        }
         if (this.expanded) {
             this.collapse();
         } else {
             this.expand();
         }
-    },
-    select: function(e) {
-        if (e) e.stopImmediatePropagation();
-        if (this.$el) {
-            this.$el.addClass('tree-selected');
-        }
         this.tree.setSelection(this);
+        return this;
     },
     deselect: function() {
         if (this.$el) {
-            this.$el.removeClass('tree-selected');
+            this.$el.css('background', 'rgba(255, 255, 255, 1)');
         }
-    },
-    expand: function() {
-        this.expanded = true;
-        var contents = this.model.eContents();
-        _.each(contents, this.addNode, this);
+        return this;
     },
     addNode: function(model) {
         var previous = _.last(this.children);
@@ -789,11 +795,20 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
         } else {
             this.tree.$tbody.append(view.$el);
         }
+        return this;
+    },
+    expand: function() {
+        if (this.expanded) this.collapse();
+        this.expanded = true;
+        var contents = this.model.eContents();
+        _.each(contents, this.addNode, this);
+        return this;
     },
     collapse: function() {
         this.expanded = false;
         _.each(this.children, function(c) { c.remove(); });
         this.children.length = 0;
+        return this;
     },
     remove: function() {
         _.each(this.children, function(c) { c.remove(); });
@@ -833,7 +848,6 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
 
         var label = Edit.LabelProvider.getLabel(this.model);
         table.label.innerHTML = label;
-        td.addEventListener('click', this.onClick);
 
         return td;
     },
@@ -893,142 +907,6 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
 
 });
 
-/*
-
- TreeNodeView
-
-<li>
-    <div class="tree-node">
-        <div class="tree-selected">
-            <span class="icon-chevron-right"></span>
-            <span class="icon-edit-EPackage folder"></span>
-            <span> 222 </span>
-        </div>
-        <ul>
-        </ul>
-    </div>
-</li>
-
-
-
-Edit.TreeNodeView = Backbone.View.extend({
-    template: _.template('<li><div class="<%= kind %>"><div></div><ul></ul></div></li>'),
-    chevronTemplate: _.template('<span class="chevron icon-chevron-right"></span>'),
-    iconTemplate: _.template('<span class="icon-edit-<%= icon %>"> </span>'),
-    labelTemplate: _.template('<span> <%= label %> </span>'),
-
-    isSelected: false,
-    isExpanded: false,
-
-    events: {
-        'click div span[class~="chevron"]': 'expand',
-        'click': 'select',
-        'mouseover': 'highlight',
-        'mouseout': 'unhighlight'
-    },
-
-    initialize: function(attributes) {
-        _.bindAll(this, 'render', 'expand', 'select', 'highlight', 'unhighlight');
-        this.children = [];
-        this.tree = attributes.tree;
-    },
-    kind: function() {
-        var contents = this.model ? this.model.eContents() : [];
-        return contents.length > 0 ? 'tree-node' : 'tree-leaf';
-    },
-    render: function() {
-        if (!this.model) return this;
-
-        var kind = this.kind();
-        if (!this.$node) {
-            var html = this.template({ kind: kind });
-            this.setElement(html);
-
-            this.$node = $('div > div', this.$el);
-            this.$children = $('div > ul', this.$el);
-        }
-
-        // clear content
-        this.$node.children().remove();
-        this.$children.children().remove();
-
-        // make content
-        var icon = this.model.eClass.get('name');
-        var label = Edit.LabelProvider.getLabel(this.model);
-        var chevronHTML = this.chevronTemplate();
-        var iconHTML = this.iconTemplate({ icon: icon });
-        var labelHTML = this.labelTemplate({ label: label });
-
-        if (kind === 'tree-node') {
-            this.$node.append(chevronHTML);
-        }
-
-        this.$node.append(iconHTML) .append(labelHTML);
-        this.$chevron = $('span[class~="chevron"]', this.$node);
-
-        return this;
-    },
-    highlight: function(eve) {
-        if (eve) eve.stopImmediatePropagation();
-        if (this.$el && this.$node) {
-            this.$node.addClass('tree-over');
-        }
-    },
-    unhighlight: function(eve) {
-        if (eve) eve.stopImmediatePropagation();
-        if (this.$el && this.$node) {
-            this.$node.removeClass('tree-over');
-        }
-    },
-    select: function(eve) {
-        if (eve) eve.stopImmediatePropagation();
-        if (this.$el && this.$node) {
-            this.$node.addClass('tree-selected');
-        }
-        this.tree.setSelection(this);
-    },
-    deselect: function() {
-        if (this.$el && this.$node) {
-            this.$node.removeClass('tree-selected');
-        }
-    },
-    addChildren: function(child) {
-        if (!child) return;
-        var view = new Edit.TreeNodeView({ model: child, tree: this.tree });
-        view.render();
-        this.$children.append(view.$el);
-        this.children.push(view);
-        return view;
-    },
-    expand: function(eve) {
-        if (eve) eve.stopImmediatePropagation();
-        if (!this.$children) return this;
-
-        if (this.isExpanded) {
-            this.$children.children().remove();
-            this.$chevron
-                .removeClass('icon-chevron-down')
-                .addClass('icon-chevron-right');
-            this.children.length = 0;
-            this.isExpanded = false;
-        } else {
-            var contents = this.model.eContents();
-            if (contents.length === 0) return this;
-
-            this.$chevron
-                .removeClass('icon-chevron-right')
-                .addClass('icon-chevron-down');
-            this.$children.children().remove();
-            this.children.length = 0;
-            _.each(contents, this.addChildren, this);
-            this.isExpanded = true;
-        }
-
-        return this;
-    }
-});
-
-*/
 
 
 /**
@@ -1072,6 +950,7 @@ Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
         if (this.$frame) {
             this.$frame.expand();
         }
+        return this;
     },
 
     setSelection: function(view) {
@@ -1086,7 +965,7 @@ Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
     remove: function() {
         if (this.$body) this.$body.remove();
         _.each(this.nodes, function(node) { node.remove(); });
-        Backbone.View.prototype.remove.apply(this);
+        return Backbone.View.prototype.remove.apply(this);
     }
 });
 
@@ -1097,6 +976,8 @@ Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
  *
  */
 Edit.Editor = Backbone.View.extend(/** @lends Edior.prototype */ {
+    menu: false,
+
     _frame: '<div class="editor-frame"></div>',
     _menu: '<div class="editor-menu"></div>',
     _content: '<div class="editor-content-outer"><div class="editor-content"></div></div>',
@@ -1111,10 +992,13 @@ Edit.Editor = Backbone.View.extend(/** @lends Edior.prototype */ {
             this.$el.addClass('editor');
             this.$el.append(this._frame);
             $frame = $('.editor-frame', this.$el);
-            $frame.append(this._menu);
-            $frame.append(this._content);
 
-            this.$menu = $('.editor-menu', $frame);
+            if (this.menu) {
+                $frame.append(this._menu);
+                this.$menu = $('.editor-menu', $frame);
+            }
+
+            $frame.append(this._content);
             this.$content = $('.editor-content', $frame);
 
             if (this.$container) {
@@ -1146,22 +1030,35 @@ Edit.TabEditor = Edit.Editor.extend(/** @lends TabEdior.prototype */ {
 
     initialize: function(attributes) {
         Edit.Editor.prototype.initialize.apply(this, [attributes]);
-        this.tab = new Edit.Tab({ eid: this.cid, model: this.model });
+        this.tab = new Edit.Tab({ editor: this, model: this.model, title: attributes.title });
         this.tab.on('remove', this.remove);
     },
 
     render: function() {
-        Edit.Editor.prototype.render.apply(this);
-
-        if (this.$tabs) {
+        if (this.$tabs && !this.tab.isRender) {
             this.$tabs.append(this.tab.render().$el);
         }
+
+        Edit.Editor.prototype.render.apply(this);
 
         return this;
     },
 
     show: function() {
-         $('a[href="#tab-' +  this.cid + '"]', this.$tabs).tab('show');
+        $('a[href="#tab-' +  this.cid + '"]', this.$tabs).tab('show');
+    },
+
+    getTitle: function() {
+        var uri;
+        if (this.title) {
+            return this.title;
+        } else if (this.model) {
+            uri = this.model.get('uri');
+            return uri.slice(uri.lastIndexOf('/') + 1, uri.length);
+        }
+        else {
+            return 'unnamed';
+        }
     }
 
 });
@@ -1172,13 +1069,27 @@ Edit.TabEditor = Edit.Editor.extend(/** @lends TabEdior.prototype */ {
  * @class
  *
  */
-Edit.TreeTabEdior = Edit.TabEditor.extend(/** @lends TreeTabEdior.prototype */ {
+Edit.TreeTabEditor = Edit.TabEditor.extend(/** @lends TreeTabEdior.prototype */ {
+    menu: true,
     _menuGroup: '<div class="btn-group"></div>',
 
     initialize: function(attributes) {
         _.bindAll(this);
         Edit.TabEditor.prototype.initialize.apply(this, [attributes]);
         this.tree = new Ecore.Edit.Tree({ model: this.model });
+        this.model.on('change add', function(changed) {
+            var selected = this.tree.selected;
+            if (selected)  {
+                selected.render();
+                if (selected.expanded) selected.expand();
+            }
+        }, this);
+        this.model.on('remove', function(list) {
+            if (this.tree.selected.parent) {
+                this.tree.setSelection(this.tree.selected.parent);
+                this.tree.selected.expand();
+            }
+        }, this);
     },
 
     renderContent: function() {
@@ -1205,21 +1116,38 @@ Edit.TreeTabEdior = Edit.TabEditor.extend(/** @lends TreeTabEdior.prototype */ {
             var siblings = eType.get('abstract') ? eType.get('eAllSubTypes') : [eType];
             var label, item;
 
-            if (child.length > 0) menu.addItem(new Edit.Separator());
+            if (child.length) menu.addItem(new Edit.Separator());
 
             _.each(siblings, function(type) {
                 label = 'Sibling ' + type.get('name');
                 item = new Edit.DropDownItem({ label: label });
                 menu.addItem(item);
-            });
+                item.on('click', createSiblingItems(type, eContainingFeature, model, this));
+            }, this);
         }
 
         _.each(menu.items, menu.renderItem, menu);
     },
 
     removeElement: function() {
-        console.log('remove');
+        var selection = this.tree.selected;
+        if (!selection) return;
+
+        var eContainingFeature = selection.model.eContainingFeature,
+            eContainer = selection.model.eContainer;
+
+        if (eContainer) {
+            if (eContainingFeature.get('upperBound') !== 1) {
+                eContainer.get(eContainingFeature).remove(selection.model);
+            } else {
+                eContainer.set(eContainingFeature.get('name'), null);
+            }
+        } else {
+            selection.model.eResource().get('contents').remove(selection.model);
+        }
     },
+
+    editElement: function() {},
 
     _createMenu: function() {
         var $group = $(this._menuGroup);
@@ -1230,6 +1158,7 @@ Edit.TreeTabEdior = Edit.TabEditor.extend(/** @lends TreeTabEdior.prototype */ {
 
         this.add.on('click', this.addElement);
         this.remove.on('click', this.removeElement);
+        this.edit.on('click', this.editElement);
 
         $group.append(this.add.render().$el)
             .append(this.remove.render().$el)
@@ -1239,10 +1168,24 @@ Edit.TreeTabEdior = Edit.TabEditor.extend(/** @lends TreeTabEdior.prototype */ {
     }
 });
 
-
 /*
  * Helper functions
  */
+
+function createSiblingItems(type, feature, model, editor) {
+    return function() {
+        var eContainer = model.eContainer;
+        if (eContainer) {
+            // change selection for rendering new content
+            editor.tree.setSelection(editor.tree.selected.parent);
+            if (feature.get('upperBound') !== 1) {
+                eContainer.get(feature).add(type.create());
+            } else {
+                eContainer.set(feature.get('name'), type.create());
+            }
+        }
+    };
+}
 
 function createChildItems(feature, model) {
     var eType = feature.get('eType');
@@ -1257,7 +1200,7 @@ function createChildItems(feature, model) {
             if (feature.get('upperBound') === 1) {
                 model.set(feature.get('name'), type.create());
             } else {
-                model.get(feature.get('name')).add(type.create());
+                model.get(feature).add(type.create());
             }
         });
 
