@@ -7,11 +7,14 @@ var EPackageCompartment = Ds.Shape.extend({
     figure: {
         type: 'rect',
         fill: '270-#B8A8C8-#FFF',
-        height: 100
+        height: 100,
+        stroke: 'grey'
     },
 
     initialize: function() {
-        this.on('click', function() { this.parent.select(); }, this);
+        this.on('click', function() {
+            this.parent.select();
+        }, this);
     }
 });
 
@@ -22,7 +25,7 @@ var EPackageHeadShape = Ds.Shape.extend({
 
     figure: {
         type: 'rect',
-        height: 20,
+        height: 30,
         fill: 'none',
         stroke: 'none'
     },
@@ -37,27 +40,36 @@ var EPackageHeadShape = Ds.Shape.extend({
 
             figure: {
                 type: 'rect',
-                height: 20,
-                width: 40,
+                height: 30,
+                width: 80,
                 x: 0,
                 y: 0,
+                stroke: 'grey',
                 fill: '#B8A8C8'
             },
 
-//            layout: { type: 'xy' },
+            layout: {
+                type: 'grid',
+                columns: 1,
+                marginHeight: 5,
+                marginWidth: 5
+            },
 
             children: [
-/*                {
+                {
                     figure: {
-                        x: 0, y: 0,
                         type: 'text',
-                        height: 20,
-                        width: 60,
-                        'font-size': 14,
-                        text: 'My Package'
+                        'font-size': 11,
+                        text: 'EPackage'
+                    },
+
+                    gridData: {
+                        horizontalAlignment: 'center',
+                        grabExcessHorizontalSpace: true,
+                        grabExcessVerticalSpace: true
                     }
                 }
-*/          ]
+            ]
         }
     ]
 });

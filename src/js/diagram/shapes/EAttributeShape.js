@@ -1,23 +1,4 @@
-
-var EAttributeShape = Ds.Label.extend({
-    resizable: false,
-    draggable: false,
-    selectable: false,
-
-    figure: {
-        type: 'text',
-        text: 'name: EString',
-        height: 20,
-        width: 100,
-        stroke: 'blue',
-        position: 'left'
-    },
-
-    gridData: {
-        horizontalAlignment: 'beginning',
-        verticalAlignment: 'center',
-        grabExcessHorizontalSpace: true
-    },
+var EAttributeShape = FeatureShape.extend({
 
     initialize: function(attributes) {
         if (attributes.model) {
@@ -26,7 +7,9 @@ var EAttributeShape = Ds.Label.extend({
             this.model = Ecore.EAttribute.create({ name: 'name', eType: Ecore.EString });
         }
 
-        var text = this.model.get('name') + ' : ' + this.model.get('eType').get('name');
+        var text = this.model.get('name');
+        if (this.model.has('eType'))
+            text += ' : ' + this.model.get('eType').get('name');
         this.setText(text);
 
         this.on('change:text', function(label) {
@@ -42,33 +25,7 @@ var EAttributeShape = Ds.Label.extend({
     }
 });
 
-var EAttributeCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        width: 100,
-        fill: '235-#F9F9D8-#FFFFFF',
-        'fill-opacity': 1,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
-    },
-
-    layout: {
-        type: 'grid',
-        marginHeight: 0,
-        marginWidth: 0,
-        columns: 1
-    },
-
-    gridData: {
-        horizontalAlignment: 'fill',
-        verticalAlignment: 'fill',
-        grabExcessHorizontalSpace: true
-    },
+var EAttributeCompartment = FeatureCompartment.extend({
 
     accepts: [ EAttributeShape ],
 

@@ -1,14 +1,4 @@
 
-
-var EDataTypeLabel = {
-    figure: {
-        type: 'text',
-        text: 'EDataType',
-        height: 30,
-        'font-size': 14
-    }
-};
-
 var EDataTypeCompartment = Ds.Shape.extend({
     draggable: false,
     selectable: false,
@@ -21,29 +11,20 @@ var EDataTypeCompartment = Ds.Shape.extend({
         'fill-opacity': 0,
         stroke: '#D8D8D1',
         'stroke-width': 2
+    },
+
+    gridData: {
+        horizontalAlignment: 'fill',
+        verticalAlignment: 'fill',
+        grabExcessHorizontalSpace: true
     }
 
 });
 
-var EDataTypeShape = Ds.Shape.extend({
-    figure: {
-        type: 'rect',
-        width: 100,
-        height: 30,
-        fill: '235-#F9F9D8-#FFFFFF',
-        opacity: 1,
-        stroke: '#D8D8D1',
-        'stroke-width': 2,
-        'stroke-opacity': 1
-    },
-
-    layout: {
-        type: 'grid',
-        columns: 1
-    },
+var EDataTypeShape = ClassifierShape.extend({
 
     children: [
-        EDataTypeLabel,
+        ClassifierLabel,
         EDataTypeCompartment
     ],
 
@@ -56,5 +37,6 @@ var EDataTypeShape = Ds.Shape.extend({
             this.model = Ecore.EDataType.create({ name: 'EDataType' });
             this.diagram.model.get('eClassifiers').add(this.model);
         }
+        this.children[0].setText(this.model.get('name'));
     }
 });

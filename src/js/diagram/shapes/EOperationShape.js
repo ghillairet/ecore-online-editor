@@ -1,23 +1,4 @@
-
-var EOperationShape = Ds.Label.extend({
-    resizable: false,
-    draggable: false,
-
-    figure: {
-        type: 'text',
-        text: 'op(): EString',
-        height: 20,
-        width: 100,
-        stroke: 'blue',
-        position: 'left'
-    },
-
-    gridData: {
-        horizontalAlignment: 'beginning',
-        verticalAlignment: 'center',
-        grabExcessHorizontalSpace: true
-    },
-
+var EOperationShape = FeatureShape.extend({
     initialize: function(attributes) {
         if (attributes.model) {
             this.model = attributes.model;
@@ -32,32 +13,7 @@ var EOperationShape = Ds.Label.extend({
     }
 });
 
-var EOperationCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        width: 100,
-        fill: 'white',
-        'fill-opacity': 0,
-        stroke: 'none',
-        'stroke-width': 2
-    },
-
-    layout: {
-        type: 'grid',
-        columns: 1
-    },
-
-    gridData: {
-        grabExcessHorizontalSpace: true,
-        grabExcessVerticalSpace: true,
-        verticalAlignment: 'fill',
-        horizontalAlignment: 'fill'
-    },
+var EOperationCompartment = FeatureCompartment.extend({
 
     accepts: [ EOperationShape ],
 
