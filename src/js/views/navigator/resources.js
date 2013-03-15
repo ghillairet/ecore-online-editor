@@ -10,7 +10,7 @@ var ResourceSetView = NavBox.extend({
         _.bindAll(this, 'show', 'hide');
         NavBox.prototype.initialize.apply(this, [attributes]);
         this.modal = new CreateResourceModal({ model: this.model });
-        this.model.on('change', this.render);
+        this.model.on('change add remove', this.render);
     },
 
     render: function() {
@@ -55,12 +55,16 @@ var ResourceSetView = NavBox.extend({
  * @class
  */
 var ResourceView = Backbone.View.extend({
-    template: _.template('<div class="nav-row"></div>'),
-    templateIcon: _.template('<i class="icon-folder-close icon-large"></i>'),
-    templateLabel: _.template('<span> <%= uri %></span>'),
-    templateRemove: _.template('<i class="icon-remove icon-large"></i>'),
-    templateDiagram: _.template('<i class="icon-sitemap icon-large"</i>'),
-    templateAdd: _.template('<i class="icon-plus icon-large"></i>'),
+    template:
+        '<div class="nav-row">' +
+        '</div>',
+    templateResource: _.template(
+            '<i class="<%= icon1 %>"></i>' +
+            '<span> <%= uri %></span>' +
+            '<i class="<%= icon2 %>""></i>' +
+            '<i class="<%= icon3 %>""</i>'),
+    templateAdd: _.template(
+        '<i class="<%= icon4 %>"></i>'),
 
     events: {
         'click': 'openEditor',
@@ -69,28 +73,48 @@ var ResourceView = Backbone.View.extend({
         'click .icon-sitemap': 'openDiagram'
     },
 
+    icons: [
+        { klass: 'icon-folder-close icon-large' },
+        { klass: 'icon-remove icon-large', tooltip: 'Delete this resource' },
+        { klass: 'icon-sitemap icon-large', tooltip: 'Open this resoure in a diagram' },
+        { klass: 'icon-plus icon-large', tooltip: 'Create a new resource' }
+    ],
+
     initialize: function(attributes) {
         _.bindAll(this);
     },
-
     render: function() {
-        var html = this.template();
-        this.setElement(html);
+        this.setElement(this.template);
 
         if (this.model) {
-            var icon = this.templateIcon();
-            var label = this.templateLabel({ uri: this.model.get('uri') });
-            var remove = this.templateRemove();
-            var dia = this.templateDiagram();
             this.$el.children().remove();
-            this.$el.append(icon).append(label).append(remove).append(dia);
+            this.$el.append(this.templateResource({
+                icon1: this.icons[0].klass,
+                icon2: this.icons[1].klass,
+                icon3: this.icons[2].klass,
+                uri: this.model.get('uri')
+            }));
         } else {
-            var add = this.templateAdd();
             this.$el.children().remove();
-            this.$el.append(add);
+            this.$el.append(this.templateAdd({
+                icon4: this.icons[3].klass
+            }));
         }
 
+        this.addTooltip();
+
         return this;
+    },
+    addTooltip: function() {
+        _.each(this.icons, function(icon) {
+            var el = $('i[class="'+icon.klass+'"]', this.$el);
+            if (el.length && icon.tooltip)
+                el.tooltip({
+                    placement: 'right',
+                    title: icon.tooltip,
+                    trigger: 'hover'
+                });
+        }, this);
     },
     openEditor: function(e) {
         if (e) e.stopPropagation();
