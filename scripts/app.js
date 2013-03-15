@@ -710,10 +710,6 @@ var NavigatorHeaderView = Backbone.View.extend({
 var PaletteView = NavBox.extend({
     title: 'Palette',
 
-    tools: {
-
-    },
-
     shapes: {
         'EPackage': EPackageShape,
         'EClass': EClassShape,
@@ -1192,7 +1188,6 @@ if (dropzone) {
     dropzone.addEventListener('dragover', handleDragOver, false);
     dropzone.addEventListener('drop', handleFileSelect, false);
 }
-
 
 
 window.onload = function() {

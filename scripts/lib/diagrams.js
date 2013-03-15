@@ -708,12 +708,20 @@ var Figure = Ds.Figure = Ds.Element.extend({
     setValue: function(key, value) {
         if (_.has(this.defaults, key)) {
             this.attributes[key] = value;
-            if (key === 'width' || key === 'height') {
-                if (!this.attributes['min-' + key])
-                    this.attributes['min-' + key] = value;
-            }
+            this.setMinValues(key ,value);
             if (this.wrapper) this.wrapper.attr(key, value);
         }
+    },
+
+    /**
+     * @private
+     */
+
+    setMinValues: function(key, value) {
+        if ((key === 'width' || key === 'height') &&
+                !this.attributes['min' + key]) {
+                    this.attributes['min-' + key] = value;
+                }
     },
 
     render: function() {},
@@ -1017,7 +1025,6 @@ var Figure = Ds.Figure = Ds.Element.extend({
                 return new fn(attrs);
             else return new Ds[fn](attrs);
         }
-        //    throw new Error('Cannot create figure for', figure);
     }
 
 });
@@ -1029,7 +1036,7 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     constructor: function(attributes) {
         if (!attributes) attributes = {};
         Ds.Figure.apply(this, [attributes]);
-        this.defaults = Rectangle.defaults;
+        this.defaults = _.extend({}, Rectangle.defaults);
         this.attributes = _.extend({}, this.defaults, attributes.figure || attributes);
         this.initialize(attributes);
     },
@@ -1037,13 +1044,14 @@ var Rectangle = Ds.Rectangle = Ds.Figure.extend({
     bounds: function() {
         if (this.wrapper)
             return this.wrapper.getABox();
-        else
+        else {
             return {
                 width: this.get('width'),
                 height: this.get('height'),
                 x: this.get('x'),
                 y: this.get('y')
             };
+        }
     },
 
     render: function() {
@@ -1393,6 +1401,7 @@ var Text = Ds.Text = Ds.Figure.extend({
     layoutText: function() {
         if (!this.text) return;
 
+        this.resizeBox();
         var box = this.bounds();
         var text = this.text;
         var lbox = text.getABox();
@@ -1428,13 +1437,7 @@ var Text = Ds.Text = Ds.Figure.extend({
         this.text = renderer.text(0, 0, this.textAttributes.text);
         this.text.attr(this.textAttributes);
 
-        var box = this.text.getBBox();
-        var w = this.get('width');
-        var h = this.get('height');
-        if (w < box.width) this.set('width', box.width);
-        if (h < box.height) this.set('height', box.height);
         this.set({ x : this.get('x'), y: this.get('y') });
-
         this.wrapper.attr(this.attributes).attr({
             stroke: 'none',
             'fill': 'white',
@@ -1447,6 +1450,18 @@ var Text = Ds.Text = Ds.Figure.extend({
         this.bindEvents();
 
         return this;
+    },
+
+    /**
+     * @private
+     */
+
+    resizeBox: function() {
+        var box = this.text.getBBox();
+        var w = this.get('width');
+        var h = this.get('height');
+        if (w < box.width) this.set('width', box.width);
+        if (h < box.height) this.set('height', box.height);
     },
 
     remove: function() {
@@ -2789,7 +2804,11 @@ var GridLayout = Layout.extend(/** @lends GridLayout.prototype */ {
                 x += cell.width + this.hgap;
             }, this);
 
-            var max = _.max(row.cells, function(cell) { return cell.height; });
+            var max = null;
+            if (row.cells.length) {
+                max = _.max(row.cells, function(cell) { return cell.height; });
+            }
+
             row.height = max ? max.height : 0;
             y += row.height + this.vgap;
             x = baseX;
@@ -3708,34 +3727,43 @@ var Label = Ds.Label = Ds.LayoutElement.extend(/** @lends Label.prototype */ {
                 y = box.y + (isNaN(py) ? 0 : py),
                 w = box.width,
                 h = box.height,
-                txt = node.textForm = document.createElement('form'),
-                inputForm = document.createElement('input');
+                id = 'form-input-' + node.get('id');
 
-            txt.setAttribute('style', 'position: absolute; left: ' + x + 'px; top: ' + y + 'px;');
+            var form = document.getElementById(id);
+            if (form) {
+                form.parentNode.removeChild(form);
+            }
+            form = document.createElement('form');
+            var inputForm = document.createElement('input');
+
+            form.setAttribute('id', id);
+            form.setAttribute('style', 'position: absolute; left: ' + x + 'px; top: ' + y + 'px;');
             inputForm.setAttribute('type', 'text');
             inputForm.value = node.getText() || '';
-            inputForm.setAttribute('style', 'padding: 0; width:' + w + 'px; height: ' + h + 'px; z-index: 1;');
-            txt.appendChild(inputForm);
+            inputForm.setAttribute('style', 'width:' + w + 'px; height: ' + h + 'px;');
+            form.appendChild(inputForm);
 
-            return { form: txt, input: inputForm };
+            return { form: form, input: inputForm };
         };
-        var handleTextInput = function() {
+        var handleTextInput = function(e) {
+            e.stopImmediatePropagation();
             if (!node.el) return;
             var text = node.el.input.value;
             node.setText(text);
-            node.domNode.removeChild(node.el.form);
+
+            node.el.form.removeEventListener('blur', handleTextInput, true);
+            node.el.form.parentNode.removeChild(node.el.form);
             delete node.el;
             delete node.domNode;
-            diagram.wrapper.toBack();
-            diagram.off('click', handleTextInput);
         };
-        node.on('dblclick', function() {
+        node.on('dblclick', function(e) {
+            e.stopImmediatePropagation();
             var el = createInputTextForm( node );
             node.el = el;
             node.domNode = node.diagram.el.parentNode;
             node.domNode.appendChild(el.form);
-            diagram.wrapper.toFront();
-            diagram.on('click', handleTextInput);
+            node.el.form.focus();
+            node.el.form.addEventListener('blur', handleTextInput, true);
         });
     }
 

@@ -1,4 +1,3 @@
-
 window.onload = function() {
 
     window.Workbench = _.extend({}, Backbone.Events);
