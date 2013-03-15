@@ -1,11 +1,3 @@
-jQuery(function() {
-
-    window.Demo = {};
-
-    var Workbench = Demo.Workbench = _.extend({}, Backbone.Events);
-
-
-
 
 var EReferenceConnection = Ds.Connection.extend({
     figure: {
@@ -38,172 +30,13 @@ var ESuperTypesConnection = Ds.Connection.extend({
 });
 
 
-
-// EEnumLabel
-
-var EEnumLabel = {
-    figure: {
-        type: 'text',
-        text: 'EEnum',
-        height: 40,
-        'font-size': 14
-    }
-};
-
-// EEnumLiteralShape
-
-var EEnumLiteralShape = Ds.Label.extend({
-    resizable: false,
-    draggable: false,
-
-    figure: {
-        type: 'text',
-        text: 'name: EString',
-        height: 20,
-        stroke: 'blue',
-        position: 'center-left'
-    }
-});
-
-var EEnumCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        fill: 'white',
-        'fill-opacity': 0,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
-    },
-
-    layout: {
-        type: 'grid',
-        hgap: 5,
-        vgap: 5,
-        columns: 1
-    },
-
-    accepts: [
-        EEnumLiteralShape
-    ]
-
-});
-
-
-// EEnumShape
-
-var EEnumShape = Ds.Shape.extend({
-    figure: {
-        type: 'rect',
-        width: 100,
-        height: 50,
-        fill: '235-#F9F9D8-#FFFFFF',
-        opacity: 1,
-        stroke: '#D8D8D1',
-        'stroke-width': 2,
-        'stroke-opacity': 1
-    },
-
-    layout: {
-        type: 'flex',
-        columns: 1,
-        stretch: true
-    },
-
-    children: [
-        EEnumLabel,
-        EEnumCompartment
-    ],
-
-    initialize: function(attributes) {
-        if (!this.diagram) return; // dummies
-
-        if (attributes.model) {
-            this.model = attributes.model;
-        } else {
-            this.model = Ecore.EEnum.create({ name: 'EEnum' });
-            this.diagram.model.get('eClassifiers').add(this.model);
-        }
-    }
-});
-
-
-
-
-var EDataTypeLabel = {
-    figure: {
-        type: 'text',
-        text: 'EDataType',
-        height: 30,
-        'font-size': 14
-    }
-};
-
-var EDataTypeCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        fill: 'white',
-        'fill-opacity': 0,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
-    }
-
-});
-
-var EDataTypeShape = Ds.Shape.extend({
-    figure: {
-        type: 'rect',
-        width: 100,
-        height: 30,
-        fill: '235-#F9F9D8-#FFFFFF',
-        opacity: 1,
-        stroke: '#D8D8D1',
-        'stroke-width': 2,
-        'stroke-opacity': 1
-    },
-
-    layout: {
-        type: 'grid',
-        columns: 1
-    },
-
-    children: [
-        EDataTypeLabel,
-        EDataTypeCompartment
-    ],
-
-    initialize: function(attributes) {
-        if (!this.diagram) return; // dummies
-
-        if (attributes.model) {
-            this.model = attributes.model;
-        } else {
-            this.model = Ecore.EDataType.create({ name: 'EDataType' });
-            this.diagram.model.get('eClassifiers').add(this.model);
-        }
-    }
-});
-
-
-var EAttributeShape = Ds.Label.extend({
+var FeatureShape = Ds.Label.extend({
     resizable: false,
     draggable: false,
     selectable: false,
 
     figure: {
         type: 'text',
-        text: 'name: EString',
-        height: 20,
-        width: 100,
-        stroke: 'blue',
         position: 'left'
     },
 
@@ -211,7 +44,42 @@ var EAttributeShape = Ds.Label.extend({
         horizontalAlignment: 'beginning',
         verticalAlignment: 'center',
         grabExcessHorizontalSpace: true
+    }
+
+});
+
+var FeatureCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
+
+    figure: {
+        type: 'rect',
+        height: 20,
+        width: 100,
+        fill: '235-#F9F9D8-#FFFFFF',
+        'fill-opacity': 0,
+        stroke: '#D8D8D1',
+        'stroke-width': 2
     },
+
+    layout: {
+        type: 'grid',
+        marginHeight: 8,
+        marginWidth: 8,
+        vgap: 8,
+        columns: 1
+    },
+
+    gridData: {
+        horizontalAlignment: 'fill',
+        verticalAlignment: 'fill',
+        grabExcessHorizontalSpace: true
+    }
+});
+
+
+var EAttributeShape = FeatureShape.extend({
 
     initialize: function(attributes) {
         if (attributes.model) {
@@ -220,7 +88,9 @@ var EAttributeShape = Ds.Label.extend({
             this.model = Ecore.EAttribute.create({ name: 'name', eType: Ecore.EString });
         }
 
-        var text = this.model.get('name') + ' : ' + this.model.get('eType').get('name');
+        var text = this.model.get('name');
+        if (this.model.has('eType'))
+            text += ' : ' + this.model.get('eType').get('name');
         this.setText(text);
 
         this.on('change:text', function(label) {
@@ -236,33 +106,7 @@ var EAttributeShape = Ds.Label.extend({
     }
 });
 
-var EAttributeCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        width: 100,
-        fill: '235-#F9F9D8-#FFFFFF',
-        'fill-opacity': 1,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
-    },
-
-    layout: {
-        type: 'grid',
-        marginHeight: 0,
-        marginWidth: 0,
-        columns: 1
-    },
-
-    gridData: {
-        horizontalAlignment: 'fill',
-        verticalAlignment: 'fill',
-        grabExcessHorizontalSpace: true
-    },
+var EAttributeCompartment = FeatureCompartment.extend({
 
     accepts: [ EAttributeShape ],
 
@@ -313,26 +157,7 @@ var EAttributeCompartment = Ds.Shape.extend({
 });
 
 
-
-var EOperationShape = Ds.Label.extend({
-    resizable: false,
-    draggable: false,
-
-    figure: {
-        type: 'text',
-        text: 'op(): EString',
-        height: 20,
-        width: 100,
-        stroke: 'blue',
-        position: 'left'
-    },
-
-    gridData: {
-        horizontalAlignment: 'beginning',
-        verticalAlignment: 'center',
-        grabExcessHorizontalSpace: true
-    },
-
+var EOperationShape = FeatureShape.extend({
     initialize: function(attributes) {
         if (attributes.model) {
             this.model = attributes.model;
@@ -347,32 +172,7 @@ var EOperationShape = Ds.Label.extend({
     }
 });
 
-var EOperationCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        width: 100,
-        fill: 'white',
-        'fill-opacity': 0,
-        stroke: 'none',
-        'stroke-width': 2
-    },
-
-    layout: {
-        type: 'grid',
-        columns: 1
-    },
-
-    gridData: {
-        grabExcessHorizontalSpace: true,
-        grabExcessVerticalSpace: true,
-        verticalAlignment: 'fill',
-        horizontalAlignment: 'fill'
-    },
+var EOperationCompartment = FeatureCompartment.extend({
 
     accepts: [ EOperationShape ],
 
@@ -417,14 +217,13 @@ var EOperationCompartment = Ds.Shape.extend({
 });
 
 
+var ClassifierLabel = {
 
-var EClassLabel = {
     figure: {
         type: 'text',
-        text: 'EClass',
-        height: 30,
-        width: 30,
-        'font-size': 14
+        'font-size': 14,
+        'font-weight': 'bold',
+        height: 30
     },
 
     gridData: {
@@ -434,7 +233,8 @@ var EClassLabel = {
 
 };
 
-var EClassShape = Ds.Shape.extend({
+var ClassifierShape = Ds.Shape.extend({
+
     figure: {
         type: 'rect',
         width: 160,
@@ -453,10 +253,96 @@ var EClassShape = Ds.Shape.extend({
         vgap: 0,
         marginHeight: 0,
         marginWidth: 0
-    },
+    }
+
+});
+
+
+// EEnumLiteralShape
+
+var EEnumLiteralShape = FeatureShape.extend({
+});
+
+var EEnumCompartment = FeatureCompartment.extend({
+
+    accepts: [
+        EEnumLiteralShape
+    ]
+
+});
+
+
+// EEnumShape
+
+var EEnumShape = ClassifierShape.extend({
 
     children: [
-        EClassLabel,
+        ClassifierLabel,
+        EEnumCompartment
+    ],
+
+    initialize: function(attributes) {
+        if (!this.diagram) return; // dummies
+
+        if (attributes.model) {
+            this.model = attributes.model;
+        } else {
+            this.model = Ecore.EEnum.create({ name: 'EEnum' });
+            this.diagram.model.get('eClassifiers').add(this.model);
+        }
+        this.children[0].setText(this.model.get('name'));
+    }
+});
+
+
+
+var EDataTypeCompartment = Ds.Shape.extend({
+    draggable: false,
+    selectable: false,
+    resizable: false,
+
+    figure: {
+        type: 'rect',
+        height: 20,
+        fill: 'white',
+        'fill-opacity': 0,
+        stroke: '#D8D8D1',
+        'stroke-width': 2
+    },
+
+    gridData: {
+        horizontalAlignment: 'fill',
+        verticalAlignment: 'fill',
+        grabExcessHorizontalSpace: true
+    }
+
+});
+
+var EDataTypeShape = ClassifierShape.extend({
+
+    children: [
+        ClassifierLabel,
+        EDataTypeCompartment
+    ],
+
+    initialize: function(attributes) {
+        if (!this.diagram) return; // dummies
+
+        if (attributes.model) {
+            this.model = attributes.model;
+        } else {
+            this.model = Ecore.EDataType.create({ name: 'EDataType' });
+            this.diagram.model.get('eClassifiers').add(this.model);
+        }
+        this.children[0].setText(this.model.get('name'));
+    }
+});
+
+
+var EClassShape = ClassifierShape.extend({
+
+    children: [
+        ClassifierLabel,
         EAttributeCompartment,
         EOperationCompartment
     ],
@@ -511,11 +397,14 @@ var EPackageCompartment = Ds.Shape.extend({
     figure: {
         type: 'rect',
         fill: '270-#B8A8C8-#FFF',
-        height: 100
+        height: 100,
+        stroke: 'grey'
     },
 
     initialize: function() {
-        this.on('click', function() { this.parent.select(); }, this);
+        this.on('click', function() {
+            this.parent.select();
+        }, this);
     }
 });
 
@@ -526,7 +415,7 @@ var EPackageHeadShape = Ds.Shape.extend({
 
     figure: {
         type: 'rect',
-        height: 20,
+        height: 30,
         fill: 'none',
         stroke: 'none'
     },
@@ -541,27 +430,36 @@ var EPackageHeadShape = Ds.Shape.extend({
 
             figure: {
                 type: 'rect',
-                height: 20,
-                width: 40,
+                height: 30,
+                width: 80,
                 x: 0,
                 y: 0,
+                stroke: 'grey',
                 fill: '#B8A8C8'
             },
 
-//            layout: { type: 'xy' },
+            layout: {
+                type: 'grid',
+                columns: 1,
+                marginHeight: 5,
+                marginWidth: 5
+            },
 
             children: [
-/*                {
+                {
                     figure: {
-                        x: 0, y: 0,
                         type: 'text',
-                        height: 20,
-                        width: 60,
-                        'font-size': 14,
-                        text: 'My Package'
+                        'font-size': 11,
+                        text: 'EPackage'
+                    },
+
+                    gridData: {
+                        horizontalAlignment: 'center',
+                        grabExcessHorizontalSpace: true,
+                        grabExcessVerticalSpace: true
                     }
                 }
-*/          ]
+            ]
         }
     ]
 });
@@ -812,6 +710,10 @@ var NavigatorHeaderView = Backbone.View.extend({
 var PaletteView = NavBox.extend({
     title: 'Palette',
 
+    tools: {
+
+    },
+
     shapes: {
         'EPackage': EPackageShape,
         'EClass': EClassShape,
@@ -878,6 +780,14 @@ var PaletteItemView = Backbone.View.extend({
     }
 });
 
+var ToolItemView = PaletteItemView.extend({
+    template: _.template('<i class="<%= icon %>"></i><span><%= title %></span>'),
+    initialize: function(attributes) {
+        PaletteItemView.prototype.initialize.apply(this, [attributes]);
+        this.icon = attributes.icon;
+    }
+});
+
 
 /**
  * @name ResourceSetView
@@ -891,7 +801,7 @@ var ResourceSetView = NavBox.extend({
         _.bindAll(this, 'show', 'hide');
         NavBox.prototype.initialize.apply(this, [attributes]);
         this.modal = new CreateResourceModal({ model: this.model });
-        this.model.on('change', this.render);
+        this.model.on('change add remove', this.render);
     },
 
     render: function() {
@@ -936,12 +846,16 @@ var ResourceSetView = NavBox.extend({
  * @class
  */
 var ResourceView = Backbone.View.extend({
-    template: _.template('<div class="nav-row"></div>'),
-    templateIcon: _.template('<i class="icon-folder-close icon-large"></i>'),
-    templateLabel: _.template('<span> <%= uri %></span>'),
-    templateRemove: _.template('<i class="icon-remove icon-large"></i>'),
-    templateDiagram: _.template('<i class="icon-sitemap icon-large"</i>'),
-    templateAdd: _.template('<i class="icon-plus icon-large"></i>'),
+    template:
+        '<div class="nav-row">' +
+        '</div>',
+    templateResource: _.template(
+            '<i class="<%= icon1 %>"></i>' +
+            '<span> <%= uri %></span>' +
+            '<i class="<%= icon2 %>""></i>' +
+            '<i class="<%= icon3 %>""</i>'),
+    templateAdd: _.template(
+        '<i class="<%= icon4 %>"></i>'),
 
     events: {
         'click': 'openEditor',
@@ -950,28 +864,48 @@ var ResourceView = Backbone.View.extend({
         'click .icon-sitemap': 'openDiagram'
     },
 
+    icons: [
+        { klass: 'icon-folder-close icon-large' },
+        { klass: 'icon-remove icon-large', tooltip: 'Delete this resource' },
+        { klass: 'icon-sitemap icon-large', tooltip: 'Open this resoure in a diagram' },
+        { klass: 'icon-plus icon-large', tooltip: 'Create a new resource' }
+    ],
+
     initialize: function(attributes) {
         _.bindAll(this);
     },
-
     render: function() {
-        var html = this.template();
-        this.setElement(html);
+        this.setElement(this.template);
 
         if (this.model) {
-            var icon = this.templateIcon();
-            var label = this.templateLabel({ uri: this.model.get('uri') });
-            var remove = this.templateRemove();
-            var dia = this.templateDiagram();
             this.$el.children().remove();
-            this.$el.append(icon).append(label).append(remove).append(dia);
+            this.$el.append(this.templateResource({
+                icon1: this.icons[0].klass,
+                icon2: this.icons[1].klass,
+                icon3: this.icons[2].klass,
+                uri: this.model.get('uri')
+            }));
         } else {
-            var add = this.templateAdd();
             this.$el.children().remove();
-            this.$el.append(add);
+            this.$el.append(this.templateAdd({
+                icon4: this.icons[3].klass
+            }));
         }
 
+        this.addTooltip();
+
         return this;
+    },
+    addTooltip: function() {
+        _.each(this.icons, function(icon) {
+            var el = $('i[class="'+icon.klass+'"]', this.$el);
+            if (el.length && icon.tooltip)
+                el.tooltip({
+                    placement: 'right',
+                    title: icon.tooltip,
+                    trigger: 'hover'
+                });
+        }, this);
     },
     openEditor: function(e) {
         if (e) e.stopPropagation();
@@ -1261,63 +1195,64 @@ if (dropzone) {
 
 
 
-// ResourceSet
-//
+window.onload = function() {
 
-var resourceSet = Ecore.ResourceSet.create();
-var EcoreResource = resourceSet.create({ uri: Ecore.EcorePackage.get('nsURI') });
-var ResourceResource = resourceSet.create({ uri: 'http://www.eclipselabs.org/ecore/2012/resources' });
-var SampleResource = resourceSet.create({ uri: 'sample.ecore' });
-var SamplePackage = Ecore.EPackage.create({
-    name: 'sample', nsPrefix: 'sample', nsURI: 'http://example.org/sample',
-    eClassifiers: [
-        {   eClass: Ecore.EClass, name: 'Foo',
-            eStructuralFeatures:[
-                { eClass: Ecore.EAttribute, name: 'bar', eType: Ecore.EString }
-            ]
-        }
-    ]
-});
-SampleResource.get('contents').add(SamplePackage);
+    window.Workbench = _.extend({}, Backbone.Events);
 
-Workbench.properties = new PropertyWindow();
-Workbench.editorTab = new EcoreTabPanel();
-Workbench.navigator = new NavigatorView({ model: resourceSet });
-Workbench.palette = Workbench.navigator.paletteView;
+    // ResourceSet
+    //
 
-Workbench.navigator.render();
+    var resourceSet = Ecore.ResourceSet.create();
+    var EcoreResource = resourceSet.create({ uri: Ecore.EcorePackage.get('nsURI') });
+    var ResourceResource = resourceSet.create({ uri: 'http://www.eclipselabs.org/ecore/2012/resources' });
+    var SampleResource = resourceSet.create({ uri: 'sample.ecore' });
+    var SamplePackage = Ecore.EPackage.create({
+        name: 'sample', nsPrefix: 'sample', nsURI: 'http://example.org/sample',
+        eClassifiers: [
+            {   eClass: Ecore.EClass, name: 'Foo',
+                eStructuralFeatures:[
+                    { eClass: Ecore.EAttribute, name: 'bar', eType: Ecore.EString }
+                ]
+            }
+        ]
+    });
+    SampleResource.get('contents').add(SamplePackage);
 
-Workbench.navigator.on('open:editor', function(m) {
-    this.editorTab.render().open(m);
-}, Workbench);
+    Workbench.properties = new PropertyWindow();
+    Workbench.editorTab = new EcoreTabPanel();
+    Workbench.navigator = new NavigatorView({ model: resourceSet });
+    Workbench.palette = Workbench.navigator.paletteView;
 
-Workbench.navigator.on('open:diagram', function(m) {
-    this.editorTab.render().open(m, true);
-}, Workbench);
+    Workbench.navigator.render();
 
-Workbench.navigator.on('hide', function() {
-    $('#main').animate({ left: '50px' }, 100);
-}, Workbench);
+    Workbench.navigator.on('open:editor', function(m) {
+        this.editorTab.render().open(m);
+    }, Workbench);
 
-Workbench.navigator.on('show', function() {
-    $('#main').animate({ left: '300px' }, 100);
-}, Workbench);
+    Workbench.navigator.on('open:diagram', function(m) {
+        this.editorTab.render().open(m, true);
+    }, Workbench);
 
-Workbench.editorTab.on('select', function(m) {
-    this.properties.content.model = m;
-}, Workbench);
+    Workbench.navigator.on('hide', function() {
+        $('#main').animate({ left: '50px' }, 100);
+    }, Workbench);
 
-Workbench.properties.content.on('change', function() {
-    console.log(Workbench.editorTab);
-}, Workbench);
+    Workbench.navigator.on('show', function() {
+        $('#main').animate({ left: '300px' }, 100);
+    }, Workbench);
 
-resourceSet.on('add', function(m) {
-    this.editorTab.render().open(m);
-    this.properties.content.model = m;
-    this.properties.render();
-}, Workbench);
+    Workbench.editorTab.on('select', function(m) {
+        this.properties.content.model = m;
+    }, Workbench);
 
+    Workbench.properties.content.on('change', function() {
+        console.log(Workbench.editorTab);
+    }, Workbench);
 
+    resourceSet.on('add', function(m) {
+        this.editorTab.render().open(m);
+        this.properties.content.model = m;
+        this.properties.render();
+    }, Workbench);
 
-});
-
+};

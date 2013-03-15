@@ -14,12 +14,13 @@ module.exports = function(grunt) {
         concat: {
             dist: {
                 src: [
-                    'build/start.js',
                     'src/js/diagram/connections/Connections.js',
-                    'src/js/diagram/shapes/EEnumShape.js',
-                    'src/js/diagram/shapes/EDataTypeShape.js',
+                    'src/js/diagram/shapes/FeatureShape.js',
                     'src/js/diagram/shapes/EAttributeShape.js',
                     'src/js/diagram/shapes/EOperationShape.js',
+                    'src/js/diagram/shapes/ClassifierShape.js',
+                    'src/js/diagram/shapes/EEnumShape.js',
+                    'src/js/diagram/shapes/EDataTypeShape.js',
                     'src/js/diagram/shapes/EClassShape.js',
                     'src/js/diagram/shapes/EPackageShape.js',
                     'src/js/diagram/EcoreDiagram.js',
@@ -32,8 +33,7 @@ module.exports = function(grunt) {
                     'src/js/views/property.js',
                     'src/js/views/editor.js',
                     'src/js/util/dnd.js',
-                    'src/js/app.js',
-                    'build/end.js'
+                    'src/js/app.js'
                 ],
                 dest: 'scripts/app.js'
             }

@@ -372,7 +372,11 @@ var TextValue = Backbone.View.extend({
 var DateValue = Backbone.View.extend({});
 
 var SelectValue = Backbone.View.extend({
-    templateOptions: _.template('<% _.each(options, function(option) { %> <option> <%= option.eClass ? Ecore.Edit.LabelProvider.getLabel(option) : option %></option> <% }); %>'),
+    templateOptions: _.template(
+        '<% _.each(options, function(option) { %> ' +
+        '<option> <%= option.eClass ? ' +
+        'Ecore.Edit.LabelProvider.getLabel(option) : option %>' +
+        '</option> <% }); %>'),
 
     initialize: function(attributes) {
         attributes || (attributes = {});
@@ -668,10 +672,9 @@ Edit.PropertySheet = Backbone.View.extend({
             refs = _.filter(eClass.get('eAllReferences'), function(f) { return !f.get('derived'); }),
             resourceSet, eClasses;
 
-        resourceSet = this.model.eResource().get('resourceSet');
-        if (resourceSet) eClasses = resourceSet.elements('EClass');
-
-        this.createRow('eClass', this.model, this.model.eClass, eClasses);
+//      resourceSet = this.model.eResource().get('resourceSet');
+//      if (resourceSet) eClasses = resourceSet.elements('EClass');
+//      this.createRow('eClass', this.model, this.model.eClass, eClasses);
         _.each(attrs, this.createFeatureRow, this);
         _.each(refs, this.createFeatureRow, this);
         _.each(this.views, this.renderRow, this);
