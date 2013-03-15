@@ -71,3 +71,11 @@ var PaletteItemView = Backbone.View.extend({
     }
 });
 
+var ToolItemView = PaletteItemView.extend({
+    template: _.template('<i class="<%= icon %>"></i><span><%= title %></span>'),
+    initialize: function(attributes) {
+        PaletteItemView.prototype.initialize.apply(this, [attributes]);
+        this.icon = attributes.icon;
+    }
+});
+
