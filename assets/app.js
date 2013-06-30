@@ -821,7 +821,6 @@ var BooleanView = RowView.extend({
     render: function() {
         RowView.prototype.render.apply(this);
         var value = this.model.get(this.attribute) === true ? true : false;
-        console.log(this.attribute, value);
         this.$el.append(this.boolTmpl({
             label: this.attribute.get('name'),
             value: value
