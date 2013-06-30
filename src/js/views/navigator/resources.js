@@ -1,7 +1,6 @@
 /**
  * @name ResourceSetView
  * @class
- *
  */
 var ResourceSetView = NavBox.extend({
     title: 'Resources',
@@ -24,7 +23,6 @@ var ResourceSetView = NavBox.extend({
         _.each(this.views, function(view) {
             view.on('create', this.createResource, this);
             view.on('open:editor', function() { this.navigator.trigger('open:editor', view.model); }, this);
-            view.on('open:diagram', function() { this.navigator.trigger('open:diagram', view.model); }, this);
             view.on('remove', this.deleteResource, this);
         }, this);
 
@@ -56,27 +54,23 @@ var ResourceSetView = NavBox.extend({
  */
 var ResourceView = Backbone.View.extend({
     template:
-        '<div class="nav-row">' +
-        '</div>',
+        '<div class="nav-row"></div>',
     templateResource: _.template(
             '<i class="<%= icon1 %>"></i>' +
             '<span> <%= uri %></span>' +
-            '<i class="<%= icon2 %>""></i>' +
-            '<i class="<%= icon3 %>""</i>'),
+            '<i class="<%= icon2 %>""></i>'),
     templateAdd: _.template(
         '<i class="<%= icon4 %>"></i>'),
 
     events: {
         'click': 'openEditor',
         'click .icon-remove': 'remove',
-        'click .icon-plus': 'createResource',
-        'click .icon-sitemap': 'openDiagram'
+        'click .icon-plus': 'createResource'
     },
 
     icons: [
         { klass: 'icon-folder-close icon-large' },
         { klass: 'icon-remove icon-large', tooltip: 'Delete this resource' },
-        { klass: 'icon-sitemap icon-large', tooltip: 'Open this resoure in a diagram' },
         { klass: 'icon-plus icon-large', tooltip: 'Create a new resource' }
     ],
 
@@ -87,17 +81,19 @@ var ResourceView = Backbone.View.extend({
         this.setElement(this.template);
 
         if (this.model) {
+            var title = this.model.get('uri');
+            var idx = title.lastIndexOf('/');
+            title = idx ? title.substring(idx + 1, title.length) : title;
             this.$el.children().remove();
             this.$el.append(this.templateResource({
                 icon1: this.icons[0].klass,
                 icon2: this.icons[1].klass,
-                icon3: this.icons[2].klass,
-                uri: this.model.get('uri')
+                uri: title
             }));
         } else {
             this.$el.children().remove();
             this.$el.append(this.templateAdd({
-                icon4: this.icons[3].klass
+                icon4: this.icons[2].klass
             }));
         }
 
@@ -124,12 +120,6 @@ var ResourceView = Backbone.View.extend({
     },
     createResource: function() {
         this.trigger('create', this);
-    },
-    openDiagram: function(e) {
-        if (e) e.stopPropagation();
-        if (this.model) {
-            this.trigger('open:diagram', this.model);
-        }
     },
     remove: function() {
         this.trigger('remove', this.model);

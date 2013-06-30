@@ -1,98 +1,140 @@
 
-var EReferenceConnection = Ds.Connection.extend({
-    figure: {
+var EReferenceConnection = DG.Connection.extend({
+    attr: {
         stroke: 'black',
-        'stroke-width': 2
+        'stroke-width': 1
     },
     end: {
         type: 'basic'
     },
-    labels: [
-        { text: 'property', position: 'end' }
-    ],
+//    labels: [
+//        { text: 'property', position: 'end' }
+//    ],
     initialize: function(attributes) {
-        if (attributes.model) {
+        if (attributes && attributes.model) {
             this.model = attributes.model;
-            this.labels[0].set('text', this.model.get('name'));
+//            this.labels[0].set('text', this.model.get('name'));
         }
     }
 });
 
-var ESuperTypesConnection = Ds.Connection.extend({
-    figure: {
+var ESuperTypesConnection = DG.Connection.extend({
+    attr: {
         stroke: 'black',
-        'stroke-width': 2
+        'stroke-width': 1
     },
     end: {
         fill: 'white',
         type: 'basic'
+    },
+    initialize: function(attributes) {
+
     }
 });
 
 
-var FeatureShape = Ds.Label.extend({
-    resizable: false,
-    draggable: false,
-    selectable: false,
+var CompartmentFigure = {
+    type: 'rect',
+    width: 100,
+    height: 20,
+    fill: '#fff',
+    stroke: '#86A4D0',
+    'stroke-width': 1
+};
 
-    figure: {
-        type: 'text',
-        position: 'left'
+var FeatureCompartment = DG.Shape.extend({
+    config: {},
+
+    initialize: function() {
+        this.layout = new DG.GridLayout(this, {
+            columns: 1,
+            vgap: 5,
+            hgap: 5,
+            marginHeight: 5,
+            marginWidth: 5
+        });
+        /*
+        this.gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true
+        });
+        */
+        this.on('click', this.addFeature);
     },
 
-    gridData: {
-        horizontalAlignment: 'beginning',
-        verticalAlignment: 'center',
-        grabExcessHorizontalSpace: true
-    }
+    createFigure: function() {
+        return DG.Figure.create(this, CompartmentFigure);
+    },
 
+    addFeature: function() {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        var shape, options;
+
+        if (selected && selected.title === 'EAttribute') {
+            shape = new selected.shape();
+            this.add(shape);
+            this.diagram().render();
+            palette.selected = null;
+        }
+    }
 });
 
-var FeatureCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
+var OperationCompartment = DG.Shape.extend({
+    config: {},
 
-    figure: {
-        type: 'rect',
-        height: 20,
-        width: 100,
-        fill: '235-#F9F9D8-#FFFFFF',
-        'fill-opacity': 0,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
+    initialize: function() {
+        this.layout = new DG.GridLayout(this, {
+            columns: 1,
+            vgap: 5,
+            hgap: 5,
+            marginHeight: 5,
+            marginWidth: 5
+        });
+        /*
+        this.gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true,
+            grabExcessVerticalSpace: true
+        });
+        */
+        this.on('click', this.addFeature);
     },
-
-    layout: {
-        type: 'grid',
-        marginHeight: 8,
-        marginWidth: 8,
-        vgap: 8,
-        columns: 1
+    createFigure: function() {
+        return DG.Figure.create(this, CompartmentFigure);
     },
+    addFeature: function() {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        var shape, options;
 
-    gridData: {
-        horizontalAlignment: 'fill',
-        verticalAlignment: 'fill',
-        grabExcessHorizontalSpace: true
+        if (selected && selected.title === 'EOperation') {
+            shape = new selected.shape();
+            this.add(shape);
+            this.diagram().render();
+            palette.selected = null;
+        }
     }
 });
 
 
-var EAttributeShape = FeatureShape.extend({
+
+var EAttributeShape = DG.Label.extend({
 
     initialize: function(attributes) {
-        if (attributes.model) {
-            this.model = attributes.model;
+        var attrs = attributes || {};
+
+        if (attrs.model) {
+            this.model = attrs.model;
         } else {
             this.model = Ecore.EAttribute.create({ name: 'name', eType: Ecore.EString });
         }
 
         var text = this.model.get('name');
-        if (this.model.has('eType'))
-            text += ' : ' + this.model.get('eType').get('name');
-        this.setText(text);
+        if (this.model.has('eType')) text += ': ' + this.model.get('eType').get('name');
 
+        this.attributes.text = text;
+/*
         this.on('change:text', function(label) {
             var text = label.getText();
             var split = text.split(':');
@@ -103,506 +145,217 @@ var EAttributeShape = FeatureShape.extend({
             }
             this.model.set('name', name);
         }, this);
+*/
+    },
+
+    createFigure: function() {
+        return DG.Figure.create(this, {
+            type: 'text',
+            text: 'name: String',
+            stroke: 'none',
+            fill: '#535353'
+        });
     }
-});
-
-var EAttributeCompartment = FeatureCompartment.extend({
-
-    accepts: [ EAttributeShape ],
-
-    initialize: function() {
-        this.on('click', this.addElement);
-        this.on('mouseover', this.handleMouseOver);
-        this.on('mouseout', this.handleMouseOut);
-    },
-
-    handleMouseOut: function() {
-        this.set('cursor', 'default');
-    },
-
-    handleMouseOver: function(e) {
-        var palette = Workbench.palette;
-        var selected = palette.selected;
-        var fnShape;
-
-        if (selected) {
-            fnShape = selected.shape;
-            if (this.canAdd(fnShape)) {
-                this.set('cursor', 'copy');
-            } else {
-                this.set('cursor', 'no-drop');
-            }
-        }
-    },
-
-    addElement: function(e) {
-        var palette = Workbench.palette;
-        var selected = palette.selected;
-        if (selected) {
-            if (this.canAdd(selected.shape)) {
-                var shape = new selected.shape({});
-                this.add(shape);
-                this.parent.render();
-                palette.selected = null;
-
-                var eClass = this.parent.model;
-                if (shape instanceof EAttributeShape) {
-                    eClass.get('eStructuralFeatures').add(shape.model);
-                } else if (shape instanceof EOperationShape) {
-                    eClass.get('eOperations').add(shape.model);
-                }
-            }
-        }
-    }
-});
-
-
-var EOperationShape = FeatureShape.extend({
-    initialize: function(attributes) {
-        if (attributes.model) {
-            this.model = attributes.model;
-        } else {
-            this.model = Ecore.EOperation.create({ name: 'name', eType: Ecore.EString });
-        }
-
-        var type = this.model.get('eType');
-        type = type ? type.get('name') : '';
-        var text = this.model.get('name') + '(): ' + type;
-        this.setText(text);
-    }
-});
-
-var EOperationCompartment = FeatureCompartment.extend({
-
-    accepts: [ EOperationShape ],
-
-    initialize: function() {
-        this.on('click', this.addElement);
-        this.on('mouseover', this.handleMouseOver);
-        this.on('mouseout', this.handleMouseOut);
-    },
-
-    handleMouseOut: function() {
-        this.set('cursor', 'default');
-    },
-
-    handleMouseOver: function(e) {
-        var palette = Workbench.palette;
-        var selected = palette.selected;
-        var fnShape;
-
-        if (selected) {
-            fnShape = selected.shape;
-            if (this.canAdd(fnShape)) {
-                this.set('cursor', 'copy');
-            } else {
-                this.set('cursor', 'no-drop');
-            }
-        }
-    },
-
-    addElement: function(e) {
-        var palette = Workbench.palette;
-        var selected = palette.selected;
-        if (selected) {
-            if (this.canAdd(selected.shape)) {
-                var shape = new selected.shape({});
-                this.add(shape);
-                this.parent.render();
-                palette.selected = null;
-            }
-        }
-    }
-
 });
 
 
 var ClassifierLabel = {
-
-    figure: {
-        type: 'text',
-        'font-size': 14,
-        'font-weight': 'bold',
-        height: 30
-    },
-
-    gridData: {
-        horizontalAlignment: 'center',
-        grabExcessHorizontalSpace: true
-    }
-
+    type: 'text',
+    text: '',
+    'font-size': 14,
+    'font-weight': 'bold',
+    height: 30
 };
 
-var ClassifierShape = Ds.Shape.extend({
+var ClassifierShape = {
+    type: 'rect',
+    width: 100,
+    height: 60,
+//    fill: '235-#F9F9D8-#FFFFFF',
+    fill: '#D3DAEE',
+    opacity: 1,
+    stroke: '#86A4D0',
+    'stroke-width': 1,
+    'stroke-opacity': 0.8
+};
 
-    figure: {
-        type: 'rect',
-        width: 160,
-        height: 100,
-        fill: '235-#F9F9D8-#FFFFFF',
-        opacity: 1,
-        stroke: '#D8D8D1',
-        'stroke-width': 2,
-        'stroke-opacity': 1
+var ClassifierLayout = {
+    type: 'grid',
+    columns: 1
+};
+
+var ClassLabelShape = DG.Label.extend({
+    config: {
+        draggable: false,
+        resizable: false,
+        selectable: false,
+        editable: true
     },
-
-    layout: {
-        type: 'grid',
-        columns: 1,
-        hgap: 0,
-        vgap: 0,
-        marginHeight: 0,
-        marginWidth: 0
-    }
-
-});
-
-
-// EEnumLiteralShape
-
-var EEnumLiteralShape = FeatureShape.extend({
-});
-
-var EEnumCompartment = FeatureCompartment.extend({
-
-    accepts: [
-        EEnumLiteralShape
-    ]
-
-});
-
-
-// EEnumShape
-
-var EEnumShape = ClassifierShape.extend({
-
-    children: [
-        ClassifierLabel,
-        EEnumCompartment
-    ],
-
-    initialize: function(attributes) {
-        if (!this.diagram) return; // dummies
-
-        if (attributes.model) {
-            this.model = attributes.model;
-        } else {
-            this.model = Ecore.EEnum.create({ name: 'EEnum' });
-            this.diagram.model.get('eClassifiers').add(this.model);
-        }
-        this.children[0].setText(this.model.get('name'));
+    createFigure: function() {
+        return DG.Figure.create(this, ClassifierLabel);
     }
 });
 
-
-
-var EDataTypeCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 20,
-        fill: 'white',
-        'fill-opacity': 0,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
+var ClassLabelCompartment = DG.Shape.extend({
+    config: {},
+    initialize: function() {
+        this.layout = new DG.GridLayout(this, {
+            columns: 1,
+            vgap: 5,
+            hgap: 5,
+            marginHeight: 5,
+            marginWidth: 5
+        });
+        /*
+        this.gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true
+        });
+        */
     },
-
-    gridData: {
-        horizontalAlignment: 'fill',
-        verticalAlignment: 'fill',
-        grabExcessHorizontalSpace: true
-    }
-
-});
-
-var EDataTypeShape = ClassifierShape.extend({
-
-    children: [
-        ClassifierLabel,
-        EDataTypeCompartment
-    ],
-
-    initialize: function(attributes) {
-        if (!this.diagram) return; // dummies
-
-        if (attributes.model) {
-            this.model = attributes.model;
-        } else {
-            this.model = Ecore.EDataType.create({ name: 'EDataType' });
-            this.diagram.model.get('eClassifiers').add(this.model);
-        }
-        this.children[0].setText(this.model.get('name'));
+    createFigure: function() {
+        return DG.Figure.create(this, _.extend({}, CompartmentFigure, { fill: 'none' }));
     }
 });
 
 
-var EClassShape = ClassifierShape.extend({
+var EClassShape = DG.Shape.extend({
 
-    children: [
-        ClassifierLabel,
-        EAttributeCompartment,
-        EOperationCompartment
+    anchors: [
+        { position: 'n', connectionType: ESuperTypesConnection },
+        { position: 'e', connectionType: EReferenceConnection }
     ],
 
     initialize: function(attributes) {
-        if (!this.diagram) return; // dummies
-        if (attributes.model) {
+        var attrs = attributes || {};
+        var diagram = attrs.diagram;
+
+        if (attrs.model) {
             this.model = attributes.model;
             this.model.shape = this;
-            this.createContent();
         } else {
             this.model = Ecore.EClass.create({ name: 'MyClass' });
             this.model.shape = this;
-            this.diagram.model.get('eClassifiers').add(this.model);
+            diagram.model.get('eClassifiers').add(this.model);
         }
 
-        this.children[0].setText(this.model.get('name'));
-        this.on('click', this.toFront);
-        this.on('mousedown', this.doConnect);
+        this.layout = new DG.GridLayout(this, {
+            columns: 1
+        });
+        this.add(new ClassLabelCompartment());
+        this.add(new FeatureCompartment());
+        this.add(new OperationCompartment());
+
+        this.children[0].gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true
+        });
+        this.children[1].gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true
+        });
+        this.children[2].gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true,
+            grabExcessVerticalSpace: true
+        });
+        this.children[0].add(new ClassLabelShape({
+            text: this.model.get('name')
+        }));
+        this.createContent(diagram);
     },
 
+    createFigure: function() {
+        return DG.Figure.create(this, {
+            type: 'rect',
+            width: 100,
+            height: 60,
+            fill: '#D3DAEE',
+            cursor: 'move',
+            stroke: '#86A4D0',
+            'stroke-width': 1
+        });
+    },
+
+    /*
     doConnect: function(e) {
         var palette = Workbench.palette;
         var selected = palette.selected;
+
         if (selected && selected.connection) {
             this.dragConnection(e, selected.connection);
             this.on('connect:source', function() { palette.selected = null; });
         }
     },
+    */
 
-    createContent: function() {
-        _.each(this.model.get('eAttributes'), function(a) {
-            var shape = this.diagram.createShape(EAttributeShape, { model: a });
-            this.children[1].add(shape);
+    createContent: function(diagram) {
+        _.each(this.model.get('eAttributes'), function(attr) {
+            this.children[1].add(new EAttributeShape({ model: attr }));
         }, this);
-
+/*
         this.model.get('eOperations').each(function(o) {
-            var shape = this.diagram.createShape(EOperationShape, { model: o });
-            this.children[2].add(shape);
+            this.children[2].add(new EOperationShape({ model: o }));
         }, this);
+*/
     }
 
 });
 
 
 
-var EPackageCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
+var layout = function() {
+    var current = { x: 0, y: 100 };
+    return function() {
+        var ws = 10, we = 800,
+            pad = 150;
 
-    figure: {
-        type: 'rect',
-        fill: '270-#B8A8C8-#FFF',
-        height: 100,
-        stroke: 'grey'
-    },
-
-    initialize: function() {
-        this.on('click', function() {
-            this.parent.select();
-        }, this);
-    }
-});
-
-var EPackageHeadShape = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
-
-    figure: {
-        type: 'rect',
-        height: 30,
-        fill: 'none',
-        stroke: 'none'
-    },
-
-    layout: { type: 'xy' },
-
-    children: [
-        {
-            draggable: false,
-            selectable: false,
-            resizable: false,
-
-            figure: {
-                type: 'rect',
-                height: 30,
-                width: 80,
-                x: 0,
-                y: 0,
-                stroke: 'grey',
-                fill: '#B8A8C8'
-            },
-
-            layout: {
-                type: 'grid',
-                columns: 1,
-                marginHeight: 5,
-                marginWidth: 5
-            },
-
-            children: [
-                {
-                    figure: {
-                        type: 'text',
-                        'font-size': 11,
-                        text: 'EPackage'
-                    },
-
-                    gridData: {
-                        horizontalAlignment: 'center',
-                        grabExcessHorizontalSpace: true,
-                        grabExcessVerticalSpace: true
-                    }
-                }
-            ]
+        if (we > (current.x + pad)) {
+            current.x = current.x + pad;
+            current.y = current.y;
+        } else {
+            current.x = ws;
+            current.y = current.y + pad;
         }
-    ]
-});
+        return current;
+    };
+};
 
-var EPackageShape = Ds.Shape.extend({
-
-    figure: {
-        type: 'rect',
-        fill: 'yellow',
-        'fill-opacity': 0,
-        stroke: 'none',
-        height: 120,
-        width: 160
-    },
-
+var EcoreDiagram = DG.Diagram.extend({
     initialize: function(attributes) {
-        if (!this.diagram) return;
-
-        var head = new EPackageHeadShape({ diagram: this.diagram });
-        var body = new EPackageCompartment({ diagram: this.diagram });
-        this.add(head);
-        this.add(body);
-        this.layout.north = head;
-        this.layout.center = body;
-
-        this.on('click', this.select);
-    },
-
-    layout: {
-        type: 'border',
-        vgap: 0,
-        hgap: 0
-    }
-});
-
-
-var current = { x: 0, y: 100 };
-function layout() {
-    var ws = 10, we = 800,
-        pad = 150;
-
-    if (we > (current.x + pad)) {
-        current.x = current.x + pad;
-        current.y = current.y;
-    } else {
-        current.x = ws;
-        current.y = current.y + pad;
-    }
-    return current;
-}
-
-var EcoreDiagram = Ds.Diagram.extend({
-    width: 2000,
-    height: 2000,
-
-    children: [
-        EPackageShape,
-        EClassShape,
-        EDataTypeShape,
-        EEnumShape
-    ],
-
-    initialize: function(attributes) {
-        _.bindAll(this);
-        if (attributes.model) {
-            this.model = attributes.model;
+        var attrs = attributes || {};
+        this.layout = layout();
+        if (attrs.model) {
+            this.model = attrs.model;
             this.createContent();
-            this.createConnections();
-        } else {
-            this.model = Ecore.EPackage.create({
-                name: 'sample',
-                nsURI: 'http://www.example.org/sample',
-                nsPrefix: 'sample'
-            });
-            var res = resourceSet.create({ uri: 'sample.ecore' });
-            res.get('contents').add(this.model);
         }
-
-        this.on('click', this.addFromPalette);
-        this.on('click', function() { Workbench.palette.selected = null; });
-        this.on('mouseover', this.handleMouseOver);
+        this.wrapper.on('click', this.addFromPalette(this));
     },
+    addFromPalette: function(diagram) {
+        return function(e) {
+            var palette = Workbench.palette;
+            var selected = palette.selected;
+            var shape, options;
 
-    handleMouseOver: function(e) {
-        var palette = Workbench.palette;
-        var selected = palette.selected;
-
-        if (selected) {
-            if ( _.contains(['EClass', 'EDataType', 'EEnum', 'EPackage'], selected.title) ) {
-                this.wrapper.attr('cursor', 'copy');
-            } else {
-                this.wrapper.attr('cursor', 'no-drop');
+            if (selected && typeof selected.shape === 'function') {
+                options = DG.Point.get(e);
+                options.diagram = diagram;
+                shape = new selected.shape(options);
+                diagram.add(shape);
+                diagram.render();
+                palette.selected = null;
             }
-        } else {
-            this.wrapper.attr('cursor', 'default');
-        }
+        };
     },
-
-    addFromPalette: function(e) {
-        var palette = Workbench.palette;
-        var selected = palette.selected;
-
-        if (selected && typeof selected.shape === 'function') {
-            this.createShape(selected.shape, Ds.Point.get(this, e)).render();
-            palette.selected = null;
-        }
-    },
-
     createContent: function() {
         this.model.get('eClassifiers').each(function(c) {
             if (c.isTypeOf('EClass')) {
-                var position = layout();
-                //this.createShape(EClassShape, { model: c, x: position.x, y: position.y });
-                var x = 100, y = 100;
-                this.createShape(EClassShape, { model: c, x: x, y: x });
-            }
-        }, this);
-    },
-
-    createConnections: function() {
-        var connect;
-        this.model.get('eClassifiers').each(function(c) {
-            if (c.isTypeOf('EClass')) {
-                /**
-                c.get('eSuperTypes').each(function(e) {
-                    connect = this.createConnection(ESuperTypes, {
-                        source: c.shape,
-                        target: e.shape
-                    });
-                }, this);
-
-                _.each(c.get('eReferences'), function(e) {
-                    connect = this.createConnection(EReference, {
-                        source: c.shape,
-                        target: e.get('eType').shape,
-                        model: e
-                    });
-                }, this);
-                */
+                var position = this.layout();
+                var shape = new EClassShape({ diagram: this, model: c, x: position.x, y: position.y });
+                this.add(shape);
             }
         }, this);
     }
-
 });
 
 
@@ -623,13 +376,17 @@ var NavBox = Backbone.View.extend({
     initialize: function(attributes) {
         this.navigator = attributes.navigator;
         this.views = [];
+        this.isRender = false;
     },
     render: function() {
+        if (this.isRender) return this;
+
         var html = this.template();
         var header = this.templateHeader({ title: this.title });
         this.setElement(html);
         this.$el.append(header);
         $('i[class~="icon-large"]', this.$el).addClass(this._icon_up);
+        this.isRender = true;
 
         return this;
     },
@@ -645,8 +402,14 @@ var NavBox = Backbone.View.extend({
             .removeClass(this._icon_up)
             .addClass(this._icon_down);
     },
+    removeView: function(view) {
+        view.remove();
+    },
+    removeViews: function() {
+        _.each(this.views, this.removeView);
+    },
     remove: function() {
-        _.each(this.views, function(view) { view.remove(); });
+        this.removeViews();
         this.views.length = 0;
         return Backbone.View.prototype.remove.apply(this);
     }
@@ -659,7 +422,7 @@ var NavBox = Backbone.View.extend({
  */
 var NavigatorHeaderView = Backbone.View.extend({
     template: _.template('<div class="nav-header"><div class="nav-header-content"></div></div>'),
-    templateTitle: _.template('<h3>Ecore Editor</h3>'),
+//    templateTitle: _.template('<h3>Ecore Editor</h3>'),
     templateHide: _.template('<i class="icon-double-angle-left icon-large"></i>'),
     templateShow: _.template('<i class="icon-double-angle-right icon-large"></i>'),
 
@@ -684,9 +447,9 @@ var NavigatorHeaderView = Backbone.View.extend({
             icon = this.templateShow();
             $content.append(icon);
         } else {
-            title = this.templateTitle();
+//            title = this.templateTitle();
             icon = this.templateHide();
-            $content.append(title).append(icon);
+            $content.append(icon);
         }
 
         return this;
@@ -711,18 +474,18 @@ var PaletteView = NavBox.extend({
     title: 'Palette',
 
     shapes: {
-        'EPackage': EPackageShape,
-        'EClass': EClassShape,
-        'EEnum': EEnumShape,
-        'EEnumLiteral': EEnumLiteralShape,
-        'EDataType': EDataTypeShape,
-        'EAttribute': EAttributeShape,
-        'EOperation': EOperationShape
+//        'EPackage': EPackageShape,
+          'EClass': EClassShape,
+//        'EEnum': EEnumShape,
+//        'EEnumLiteral': EEnumLiteralShape,
+//        'EDataType': EDataTypeShape,
+          'EAttribute': EAttributeShape
+//        'EOperation': EOperationShape
     },
 
     connections: {
-        'EReference': EReferenceConnection,
-        'ESuperTypes': ESuperTypesConnection
+//        'EReference': EReferenceConnection,
+//        'ESuperTypes': ESuperTypesConnection
     },
 
     initialize: function(attributes) {
@@ -732,6 +495,12 @@ var PaletteView = NavBox.extend({
 
     render: function() {
         NavBox.prototype.render.apply(this);
+
+        /*
+        this.header = new PaletteHeaderView({ palette: this });
+        this.header.render();
+        this.$el.append(this.header.$el);
+        */
 
         _.each(this.shapes, function(shape, title) {
             var view = new PaletteItemView({ palette: this, shape: shape, title: title });
@@ -748,6 +517,25 @@ var PaletteView = NavBox.extend({
         return this;
     }
 
+});
+
+var PaletteHeaderView = Backbone.View.extend({
+    template: '<div class="nav-row"></div>',
+    initialize: function(attributes) {
+        this.palette = attributes.palette;
+    },
+    render: function() {
+        this.setElement(this.template);
+        console.log(this.$el);
+        this.selectTool = new ToolItemView({
+            palette: this.palette,
+            title: 'select',
+            icon: 'icon-arrow'
+        });
+        this.selectTool.render();
+        this.$el.append(this.selectTool.$el);
+        return this;
+    }
 });
 
 /**
@@ -781,6 +569,10 @@ var ToolItemView = PaletteItemView.extend({
     initialize: function(attributes) {
         PaletteItemView.prototype.initialize.apply(this, [attributes]);
         this.icon = attributes.icon;
+    },
+    render: function() {
+        this.setElement(this.template({ title: this.title, icon: this.icon }));
+        return this;
     }
 });
 
@@ -788,7 +580,6 @@ var ToolItemView = PaletteItemView.extend({
 /**
  * @name ResourceSetView
  * @class
- *
  */
 var ResourceSetView = NavBox.extend({
     title: 'Resources',
@@ -811,7 +602,6 @@ var ResourceSetView = NavBox.extend({
         _.each(this.views, function(view) {
             view.on('create', this.createResource, this);
             view.on('open:editor', function() { this.navigator.trigger('open:editor', view.model); }, this);
-            view.on('open:diagram', function() { this.navigator.trigger('open:diagram', view.model); }, this);
             view.on('remove', this.deleteResource, this);
         }, this);
 
@@ -843,27 +633,23 @@ var ResourceSetView = NavBox.extend({
  */
 var ResourceView = Backbone.View.extend({
     template:
-        '<div class="nav-row">' +
-        '</div>',
+        '<div class="nav-row"></div>',
     templateResource: _.template(
             '<i class="<%= icon1 %>"></i>' +
             '<span> <%= uri %></span>' +
-            '<i class="<%= icon2 %>""></i>' +
-            '<i class="<%= icon3 %>""</i>'),
+            '<i class="<%= icon2 %>""></i>'),
     templateAdd: _.template(
         '<i class="<%= icon4 %>"></i>'),
 
     events: {
         'click': 'openEditor',
         'click .icon-remove': 'remove',
-        'click .icon-plus': 'createResource',
-        'click .icon-sitemap': 'openDiagram'
+        'click .icon-plus': 'createResource'
     },
 
     icons: [
         { klass: 'icon-folder-close icon-large' },
         { klass: 'icon-remove icon-large', tooltip: 'Delete this resource' },
-        { klass: 'icon-sitemap icon-large', tooltip: 'Open this resoure in a diagram' },
         { klass: 'icon-plus icon-large', tooltip: 'Create a new resource' }
     ],
 
@@ -874,17 +660,19 @@ var ResourceView = Backbone.View.extend({
         this.setElement(this.template);
 
         if (this.model) {
+            var title = this.model.get('uri');
+            var idx = title.lastIndexOf('/');
+            title = idx ? title.substring(idx + 1, title.length) : title;
             this.$el.children().remove();
             this.$el.append(this.templateResource({
                 icon1: this.icons[0].klass,
                 icon2: this.icons[1].klass,
-                icon3: this.icons[2].klass,
-                uri: this.model.get('uri')
+                uri: title
             }));
         } else {
             this.$el.children().remove();
             this.$el.append(this.templateAdd({
-                icon4: this.icons[3].klass
+                icon4: this.icons[2].klass
             }));
         }
 
@@ -912,15 +700,149 @@ var ResourceView = Backbone.View.extend({
     createResource: function() {
         this.trigger('create', this);
     },
-    openDiagram: function(e) {
-        if (e) e.stopPropagation();
-        if (this.model) {
-            this.trigger('open:diagram', this.model);
-        }
-    },
     remove: function() {
         this.trigger('remove', this.model);
         return Backbone.View.prototype.remove.apply(this);
+    }
+});
+
+
+
+var PropertyView = NavBox.extend({
+    title: 'Properties',
+    initialize: function(attributes) {
+        NavBox.prototype.initialize.apply(this, [attributes]);
+    },
+    render: function() {
+        NavBox.prototype.render.apply(this);
+        this.update();
+        _.each(this.views, this.renderView, this);
+        return this;
+    },
+    update: function() {
+        this.removeViews();
+        this.views.length = 0;
+
+        var model = this.model;
+        if (model) {
+            var filter = function(attr) {
+                return !attr.get('many') && !attr.get('derived');
+            };
+            var features = _.filter(model.eClass.get('eAllAttributes'), filter);
+            features = _.union(features, _.filter(model.eClass.get('eAllReferences'), function(r) {
+                return !r.get('containment') && !r.get('derived');
+            }));
+            var label, edit;
+            this.views = _.flatten(_.map(features, function(attr) {
+                if (attr.get('eType') === Ecore.EBoolean) {
+                    return new BooleanView({ model: model, attribute: attr });
+                } else if (attr.isTypeOf('EAttribute')) {
+                    label = new LabelView({ model: attr.get('name') });
+                    edit = new TextView({ model: model, attribute: attr });
+                    return [label, edit];
+                } else if (attr.get('many')) {
+                     label = new LabelView({ model: attr.get('name') });
+                     return label;
+                } else {
+                    label = new LabelView({ model: attr.get('name') });
+                    edit = new SingleSelectView({ model: model, reference: attr });
+                    return [label, edit];
+                }
+            }));
+        } else {
+            this.views = [];
+        }
+    },
+    renderView: function(view) {
+        var $v = view.render().$el;
+        this.$el.append($v);
+    }
+});
+
+
+var RowView = Backbone.View.extend({
+    template: '<div class="nav-row"></div>',
+    render: function() {
+        this.setElement(this.template);
+        return this;
+    }
+});
+
+
+var LabelView = RowView.extend({
+    labelTmpl: _.template(
+        '<label class="label-property">' +
+            '<%= text %>' +
+        '</label>'
+    ),
+    initialize: function(attributes) {
+    },
+    render: function() {
+        RowView.prototype.render.apply(this);
+        this.$el.append(this.labelTmpl({
+            text: this.model
+        }));
+        return this;
+    }
+});
+
+
+var TextView = RowView.extend({
+    textTmpl: _.template(
+        '<div class="text-property" contenteditable="">' +
+            '<%= text %>' +
+        '</div>'
+    ),
+    initialize: function(attributes) {
+        this.attribute = attributes.attribute;
+    },
+    render: function() {
+        RowView.prototype.render.apply(this);
+        this.$el.append(this.textTmpl({
+            text: this.model.get(this.attribute)
+        }));
+        return this;
+    }
+});
+
+
+var BooleanView = RowView.extend({
+    boolTmpl: _.template(
+        '<div class="bool-property">' +
+            '<label>' +
+                '<input type="checkbox" <% if (value) { %> checked <% } %> >' +
+                '<%= label %>' +
+            '</label>' +
+        '</div>'
+    ),
+    initialize: function(attributes) {
+        this.attribute = attributes.attribute;
+    },
+    render: function() {
+        RowView.prototype.render.apply(this);
+        var value = this.model.get(this.attribute) === true ? true : false;
+        console.log(this.attribute, value);
+        this.$el.append(this.boolTmpl({
+            label: this.attribute.get('name'),
+            value: value
+        }));
+        return this;
+    }
+});
+
+
+var SingleSelectView = RowView.extend({
+    selectTmpl: _.template(
+        '<select></select>'
+    ),
+    initialize: function(attributes) {
+        this.reference = attributes.reference;
+    },
+    render: function() {
+        RowView.prototype.render.apply(this);
+        this.$el.append(this.selectTmpl({
+        }));
+        return this;
     }
 });
 
@@ -936,6 +858,7 @@ var NavigatorView = Backbone.View.extend({
         _.bindAll(this);
         this.resourceSetView = new ResourceSetView({ model: this.model, navigator: this });
         this.paletteView = new PaletteView({ navigator: this });
+        this.propertyView = new PropertyView({ navigator: this });
 
         this.header = new NavigatorHeaderView();
         this.header.on('hide', this.hide);
@@ -947,6 +870,7 @@ var NavigatorView = Backbone.View.extend({
         this.$el.append(this.$header);
         this.$el.append(this.resourceSetView.render().$el);
         this.$el.append(this.paletteView.render().$el);
+        this.$el.append(this.propertyView.render().$el);
 
         return this;
     },
@@ -955,14 +879,15 @@ var NavigatorView = Backbone.View.extend({
         this.trigger('hide');
         this.resourceSetView.remove();
         this.paletteView.remove();
+        this.propertyView.remove();
         this.$header = this.header.render(true).$el;
         this.$el.append(this.$header);
-        this.$el.animate({ width: '30px' }, 100);
+        this.$el.animate({ width: '30px' }, 200);
     },
 
     show: function() {
         this.trigger('show');
-        this.$el.animate({ width: '280px' }, 100);
+        this.$el.animate({ width: '280px' }, 200);
         this.render();
     }
 
@@ -1083,32 +1008,40 @@ var PropertyWindow = Ecore.Edit.Window.extend({
 
 
 
-var EcoreDiagramEditor = Ecore.Edit.TabEditor.extend({
+var DiagramPanelPart = Ecore.Edit.PanelPart.extend({
     tmpl: _.template('<div id="diagram-<%= id %>" style="width: 100%; height: 100%;"></div>'),
-
     initialize: function(attributes) {
-        _.bindAll(this);
-        this.title = this.getTitle() + '.diagram';
-        Ecore.Edit.TabEditor.prototype.initialize.apply(this, [attributes]);
-
-        this.diagram = new EcoreDiagram({ model: this.model.get('contents').first() });
+//            model: this.model.get('contents').first()
     },
     renderContent: function() {
         if (!this.$diagram) {
             this.$diagram = $(this.tmpl({ id: this.cid }));
             this.$content.append(this.$diagram);
-            this.diagram.setElement(this.$diagram[0]);
         }
-    },
-    show: function() {
-        return Ecore.Edit.TabEditor.prototype.show.apply(this);
+        if (!this.diagram) {
+            this.diagram = new EcoreDiagram(this.$diagram[0], {
+                model: this.model.get('contents').first()
+            });
+        }
     }
 });
 
-var EcoreTreeEditor = Ecore.Edit.TreeTabEditor.extend({
-    editElement: function() {
-        Workbench.properties.model = this.tree.selected.model;
-        Workbench.properties.render();
+var MultiPartEditor = Ecore.Edit.MultiPanelElement.extend({
+    initialize: function(attributes) {
+        this.title = Ecore.Edit.util.lastSegment(this.model.get('uri'));
+        this.tab = new Ecore.Edit.TabDropdown({ title: this.title, editor: this });
+        var part1 = new Ecore.Edit.TreePanelPart({ model: this.model });
+        var part2 = new DiagramPanelPart({ model: this.model });
+        this.tab.addDropItem('Tree Editor', part1.cid);
+        this.tab.addDropItem('Diagram Editor', part2.cid, function() {
+            part2.diagram.render();
+        });
+        var me = this.tab;
+        this.tab.addDropItem('Close', function() { me.remove(); });
+        this.parts = [part1, part2];
+        this.tab.on('remove', this.remove, this);
+        this.parts[0].tree.on('select', function(m) { this.trigger('select', m); }, this);
+        this.parts[0].tree.on('deselect', function(m) { this.trigger('deselect', m); }, this);
     }
 });
 
@@ -1116,30 +1049,21 @@ var EcoreTabPanel = Ecore.Edit.TabPanel.extend({
     el: '#main',
 
     open: function(model, diagram) {
-        var editor = this.find(model, diagram);
+        var editor = this.find(model);
         if (!editor) {
-            if (diagram)
-                editor = new EcoreDiagramEditor({ model: model });
-            else
-                editor = new EcoreTreeEditor({ model: model });
+            editor = new MultiPartEditor({ model: model });
             this.add(editor);
+            editor.on('select', function(m) { this.trigger('select', m); }, this);
+            editor.on('deselect', function(m) { this.trigger('deselect', m); }, this);
             editor.render();
         }
-        editor.show();
-
-        if (diagram) editor.diagram.render();
+        this.show(editor);
+        if (editor.diagram) editor.diagram.render();
     },
 
-    find: function(model, diagram) {
-        return _.find(this.editors, function(editor) {
-            if (editor.model === model) {
-                if (diagram) {
-                    return typeof editor.diagram === 'object';
-                } else {
-                    return typeof editor.diagram !== 'object';
-                }
-            }
-            else return false;
+    find: function(model) {
+        return _.find(this.elements, function(element) {
+            return element.model === model;
         });
     },
 
@@ -1148,6 +1072,7 @@ var EcoreTabPanel = Ecore.Edit.TabPanel.extend({
     }
 
 });
+
 
 //
 // dnd
@@ -1190,33 +1115,31 @@ if (dropzone) {
 }
 
 
+
+// initialize models
+var resourceSet = Ecore.ResourceSet.create();
+var EcoreResource = resourceSet.create({ uri: Ecore.EcorePackage.get('nsURI') });
+var ResourceResource = resourceSet.create({ uri: 'http://www.eclipselabs.org/ecore/2012/resources' });
+var SampleResource = resourceSet.create({ uri: 'sample.ecore' });
+var SamplePackage = Ecore.EPackage.create({
+    name: 'sample', nsPrefix: 'sample', nsURI: 'http://example.org/sample',
+    eClassifiers: [
+        {   eClass: Ecore.EClass, name: 'Foo',
+            eStructuralFeatures:[
+                { eClass: Ecore.EAttribute, name: 'bar', eType: Ecore.EString }
+            ]
+        }
+    ]
+});
+SampleResource.get('contents').add(SamplePackage);
+
+window.Workbench = _.extend({}, Backbone.Events);
+Workbench.properties = new PropertyWindow();
+Workbench.editorTab = new EcoreTabPanel();
+Workbench.navigator = new NavigatorView({ model: resourceSet });
+Workbench.palette = Workbench.navigator.paletteView;
+
 window.onload = function() {
-
-    window.Workbench = _.extend({}, Backbone.Events);
-
-    // ResourceSet
-    //
-
-    var resourceSet = Ecore.ResourceSet.create();
-    var EcoreResource = resourceSet.create({ uri: Ecore.EcorePackage.get('nsURI') });
-    var ResourceResource = resourceSet.create({ uri: 'http://www.eclipselabs.org/ecore/2012/resources' });
-    var SampleResource = resourceSet.create({ uri: 'sample.ecore' });
-    var SamplePackage = Ecore.EPackage.create({
-        name: 'sample', nsPrefix: 'sample', nsURI: 'http://example.org/sample',
-        eClassifiers: [
-            {   eClass: Ecore.EClass, name: 'Foo',
-                eStructuralFeatures:[
-                    { eClass: Ecore.EAttribute, name: 'bar', eType: Ecore.EString }
-                ]
-            }
-        ]
-    });
-    SampleResource.get('contents').add(SamplePackage);
-
-    Workbench.properties = new PropertyWindow();
-    Workbench.editorTab = new EcoreTabPanel();
-    Workbench.navigator = new NavigatorView({ model: resourceSet });
-    Workbench.palette = Workbench.navigator.paletteView;
 
     Workbench.navigator.render();
 
@@ -1229,15 +1152,16 @@ window.onload = function() {
     }, Workbench);
 
     Workbench.navigator.on('hide', function() {
-        $('#main').animate({ left: '50px' }, 100);
+        $('#main').animate({ left: '30px' }, 200);
     }, Workbench);
 
     Workbench.navigator.on('show', function() {
-        $('#main').animate({ left: '300px' }, 100);
+        $('#main').animate({ left: '280px' }, 200);
     }, Workbench);
 
     Workbench.editorTab.on('select', function(m) {
-        this.properties.content.model = m;
+        this.navigator.propertyView.model = m.model;
+        this.navigator.propertyView.render();
     }, Workbench);
 
     Workbench.properties.content.on('change', function() {
@@ -1251,3 +1175,4 @@ window.onload = function() {
     }, Workbench);
 
 };
+

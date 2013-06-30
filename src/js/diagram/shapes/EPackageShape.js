@@ -1,5 +1,5 @@
 
-var EPackageCompartment = Ds.Shape.extend({
+var EPackageCompartment = DG.Shape.extend({
     draggable: false,
     selectable: false,
     resizable: false,
@@ -18,7 +18,7 @@ var EPackageCompartment = Ds.Shape.extend({
     }
 });
 
-var EPackageHeadShape = Ds.Shape.extend({
+var EPackageHeadShape = DG.Shape.extend({
     draggable: false,
     selectable: false,
     resizable: false,

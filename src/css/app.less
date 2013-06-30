@@ -1,0 +1,96 @@
+@import "lib.less";
+
+@font: 'Helvetica Neue', Helvetica, Arial Geneva, sans-serif;
+
+body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: @font;
+    font-weight: 400;
+    font-size: 12px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+#auto {
+    .width-height;
+    .box-sizing;
+    background: #333333;
+    overflow: hidden;
+}
+
+#header {
+    height: 30px;
+}
+
+#footer {
+    position: absolute;
+    bottom: 0;
+    left: 0px;
+    height: 30px;
+    right: 0px;
+    background: #F5F5F5;
+    border-top: 1px solid #BEBEBE;
+}
+
+#contents {
+    width: 100%;
+    position: absolute;
+    top: 30px;
+    bottom: 30px;
+    background: white;
+    overflow: hidden;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+a {
+    color: black;
+}
+
+a :visited {
+    color: grey;
+}
+
+.diagram-canvas {
+    bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#main {
+    left: 280px;
+    top: 10px;
+    right: 0px;
+    position: absolute;
+    overflow: hidden;
+    background: #FFF;
+    width: initial;
+//    .width-height;
+}
+
+.nav-tabs {
+    margin-left: 10px;
+}
+
+.tab-content {
+    width: initial;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+input[type="checkbox"] {
+    margin: 0 6px 0 0;
+}

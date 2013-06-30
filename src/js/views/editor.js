@@ -1,30 +1,38 @@
 
-var EcoreDiagramEditor = Ecore.Edit.TabEditor.extend({
+var DiagramPanelPart = Ecore.Edit.PanelPart.extend({
     tmpl: _.template('<div id="diagram-<%= id %>" style="width: 100%; height: 100%;"></div>'),
-
     initialize: function(attributes) {
-        _.bindAll(this);
-        this.title = this.getTitle() + '.diagram';
-        Ecore.Edit.TabEditor.prototype.initialize.apply(this, [attributes]);
-
-        this.diagram = new EcoreDiagram({ model: this.model.get('contents').first() });
+//            model: this.model.get('contents').first()
     },
     renderContent: function() {
         if (!this.$diagram) {
             this.$diagram = $(this.tmpl({ id: this.cid }));
             this.$content.append(this.$diagram);
-            this.diagram.setElement(this.$diagram[0]);
         }
-    },
-    show: function() {
-        return Ecore.Edit.TabEditor.prototype.show.apply(this);
+        if (!this.diagram) {
+            this.diagram = new EcoreDiagram(this.$diagram[0], {
+                model: this.model.get('contents').first()
+            });
+        }
     }
 });
 
-var EcoreTreeEditor = Ecore.Edit.TreeTabEditor.extend({
-    editElement: function() {
-        Workbench.properties.model = this.tree.selected.model;
-        Workbench.properties.render();
+var MultiPartEditor = Ecore.Edit.MultiPanelElement.extend({
+    initialize: function(attributes) {
+        this.title = Ecore.Edit.util.lastSegment(this.model.get('uri'));
+        this.tab = new Ecore.Edit.TabDropdown({ title: this.title, editor: this });
+        var part1 = new Ecore.Edit.TreePanelPart({ model: this.model });
+        var part2 = new DiagramPanelPart({ model: this.model });
+        this.tab.addDropItem('Tree Editor', part1.cid);
+        this.tab.addDropItem('Diagram Editor', part2.cid, function() {
+            part2.diagram.render();
+        });
+        var me = this.tab;
+        this.tab.addDropItem('Close', function() { me.remove(); });
+        this.parts = [part1, part2];
+        this.tab.on('remove', this.remove, this);
+        this.parts[0].tree.on('select', function(m) { this.trigger('select', m); }, this);
+        this.parts[0].tree.on('deselect', function(m) { this.trigger('deselect', m); }, this);
     }
 });
 
@@ -32,30 +40,21 @@ var EcoreTabPanel = Ecore.Edit.TabPanel.extend({
     el: '#main',
 
     open: function(model, diagram) {
-        var editor = this.find(model, diagram);
+        var editor = this.find(model);
         if (!editor) {
-            if (diagram)
-                editor = new EcoreDiagramEditor({ model: model });
-            else
-                editor = new EcoreTreeEditor({ model: model });
+            editor = new MultiPartEditor({ model: model });
             this.add(editor);
+            editor.on('select', function(m) { this.trigger('select', m); }, this);
+            editor.on('deselect', function(m) { this.trigger('deselect', m); }, this);
             editor.render();
         }
-        editor.show();
-
-        if (diagram) editor.diagram.render();
+        this.show(editor);
+        if (editor.diagram) editor.diagram.render();
     },
 
-    find: function(model, diagram) {
-        return _.find(this.editors, function(editor) {
-            if (editor.model === model) {
-                if (diagram) {
-                    return typeof editor.diagram === 'object';
-                } else {
-                    return typeof editor.diagram !== 'object';
-                }
-            }
-            else return false;
+    find: function(model) {
+        return _.find(this.elements, function(element) {
+            return element.model === model;
         });
     },
 
@@ -64,3 +63,4 @@ var EcoreTabPanel = Ecore.Edit.TabPanel.extend({
     }
 
 });
+

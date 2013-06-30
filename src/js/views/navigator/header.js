@@ -4,7 +4,7 @@
  */
 var NavigatorHeaderView = Backbone.View.extend({
     template: _.template('<div class="nav-header"><div class="nav-header-content"></div></div>'),
-    templateTitle: _.template('<h3>Ecore Editor</h3>'),
+//    templateTitle: _.template('<h3>Ecore Editor</h3>'),
     templateHide: _.template('<i class="icon-double-angle-left icon-large"></i>'),
     templateShow: _.template('<i class="icon-double-angle-right icon-large"></i>'),
 
@@ -29,9 +29,9 @@ var NavigatorHeaderView = Backbone.View.extend({
             icon = this.templateShow();
             $content.append(icon);
         } else {
-            title = this.templateTitle();
+//            title = this.templateTitle();
             icon = this.templateHide();
-            $content.append(title).append(icon);
+            $content.append(icon);
         }
 
         return this;
