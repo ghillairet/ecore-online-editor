@@ -2,24 +2,23 @@
 
 @nav-side-color: #000;
 @nav-side-shadow-color: rgba(0,0,0,0.30);
-@nav-side-background: #F5F5F5;
+@nav-side-background: #FBFBFB;
 @box-background: #F1F1F1;
-@icon-color: rgb(105, 105, 105);
+@icon-color: #BEBEBE;
 
 #navigator {
     width: 280px;
-    top: 0;
-    bottom: 0;
-    position: absolute;
-    overflow: hidden;
+    position: relative;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: @nav-side-background;
     color: @nav-side-color;
     -webkit-user-select: none;
-    .nav-display;
-    .box-shadow-inset(1px 0 2px, @nav-side-shadow-color);
+    .box-shadow-inset(-1px 0 0, @nav-side-shadow-color);
 
     .nav-header {
-        height: 50px;
+        height: 30px;
 
         .nav-header-content {
             top: 10px;
@@ -44,9 +43,15 @@
                 right: 0;
                 cursor: pointer;
             }
+            .icon-double-angle-left:hover {
+                color: green;
+            }
             .icon-double-angle-right {
                 right: 0;
                 cursor: pointer;
+            }
+            .icon-double-angle-right:hover {
+                color: green;
             }
         }
     }
@@ -59,30 +64,26 @@
         padding: 2px;
 
         .nav-box-header {
+            margin: 4px 2px 6px 0px;
+            padding-left: 8px;
             line-height: 20px;
-            padding: 0 8px;
-            margin: 0;
-            background: @box-background;
-            .linear-gradient(@box-background, #DDD);
-            border-left: 1px solid #c6c6c6;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #c6c6c6;
             color: #777;
             text-shadow: 0px 1px 0px rgba(255,255,255,0.80);
             text-transform: uppercase;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 14px;
         }
 
         .nav-row:hover {
-            background: rgba(225,225,225,1);
+            background: #FFEECC;
         }
 
         .nav-row {
+            margin: 0px 8px 0px 8px;
             cursor: pointer;
             background: none;
             overflow: hidden;
-            padding: 4px;
+            padding: 2px 0px 2px 0px;
             height: 20px;
             position: relative;
 
@@ -92,9 +93,37 @@
                 text-overflow: ellipsis;
                 overflow: hidden;
                 display: block;
-                top: 4px;
+                top: 3px;
                 left: 30px;
                 position: absolute;
+            }
+
+            label {
+                left: 0;
+                padding-left: 4px;
+            }
+
+            div.text-property {
+                -moz-user-select: text;
+                -khtml-user-select: text;
+                -webkit-user-select: text;
+                user-select: text;
+                left: 0;
+                padding-left: 4px;
+                background: white;
+                border: 1px solid #C1D2E4;
+                min-height: 20px;
+            }
+
+            select {
+                height: 20px;
+                left: 0;
+                padding-left: 4px;
+                width: 100%;
+            }
+
+            .selected {
+                background: #FFEECC;
             }
 
             .icon-remove {
@@ -115,6 +144,9 @@
             .icon-plus:hover {
                 color: green;
             }
+            .icon-folder-close {
+                color: @icon-color;
+            }
         }
     }
 }
@@ -126,10 +158,18 @@
     cursor: pointer;
 }
 
+.icon-double-angle-up:hover {
+    color: green;
+}
+
 .icon-double-angle-down {
     top: 5px;
     right: 15px;
     position: absolute;
     cursor: pointer;
+}
+
+.icon-double-angle-down:hover {
+    color: green;
 }
 

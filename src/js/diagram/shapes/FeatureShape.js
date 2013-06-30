@@ -1,48 +1,84 @@
-var FeatureShape = Ds.Label.extend({
-    resizable: false,
-    draggable: false,
-    selectable: false,
+var CompartmentFigure = {
+    type: 'rect',
+    width: 100,
+    height: 20,
+    fill: '#fff',
+    stroke: '#86A4D0',
+    'stroke-width': 1
+};
 
-    figure: {
-        type: 'text',
-        position: 'left'
+var FeatureCompartment = DG.Shape.extend({
+    config: {},
+
+    initialize: function() {
+        this.layout = new DG.GridLayout(this, {
+            columns: 1,
+            vgap: 5,
+            hgap: 5,
+            marginHeight: 5,
+            marginWidth: 5
+        });
+        /*
+        this.gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true
+        });
+        */
+        this.on('click', this.addFeature);
     },
 
-    gridData: {
-        horizontalAlignment: 'beginning',
-        verticalAlignment: 'center',
-        grabExcessHorizontalSpace: true
-    }
+    createFigure: function() {
+        return DG.Figure.create(this, CompartmentFigure);
+    },
 
+    addFeature: function() {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        var shape, options;
+
+        if (selected && selected.title === 'EAttribute') {
+            shape = new selected.shape();
+            this.add(shape);
+            this.diagram().render();
+            palette.selected = null;
+        }
+    }
 });
 
-var FeatureCompartment = Ds.Shape.extend({
-    draggable: false,
-    selectable: false,
-    resizable: false,
+var OperationCompartment = DG.Shape.extend({
+    config: {},
 
-    figure: {
-        type: 'rect',
-        height: 20,
-        width: 100,
-        fill: '235-#F9F9D8-#FFFFFF',
-        'fill-opacity': 0,
-        stroke: '#D8D8D1',
-        'stroke-width': 2
+    initialize: function() {
+        this.layout = new DG.GridLayout(this, {
+            columns: 1,
+            vgap: 5,
+            hgap: 5,
+            marginHeight: 5,
+            marginWidth: 5
+        });
+        /*
+        this.gridData = new DG.GridData({
+            horizontalAlignment: 'fill',
+            grabExcessHorizontalSpace: true,
+            grabExcessVerticalSpace: true
+        });
+        */
+        this.on('click', this.addFeature);
     },
-
-    layout: {
-        type: 'grid',
-        marginHeight: 8,
-        marginWidth: 8,
-        vgap: 8,
-        columns: 1
+    createFigure: function() {
+        return DG.Figure.create(this, CompartmentFigure);
     },
+    addFeature: function() {
+        var palette = Workbench.palette;
+        var selected = palette.selected;
+        var shape, options;
 
-    gridData: {
-        horizontalAlignment: 'fill',
-        verticalAlignment: 'fill',
-        grabExcessHorizontalSpace: true
+        if (selected && selected.title === 'EOperation') {
+            shape = new selected.shape();
+            this.add(shape);
+            this.diagram().render();
+            palette.selected = null;
+        }
     }
 });
 

@@ -1,30 +1,28 @@
+
+// initialize models
+var resourceSet = Ecore.ResourceSet.create();
+var EcoreResource = resourceSet.create({ uri: Ecore.EcorePackage.get('nsURI') });
+var ResourceResource = resourceSet.create({ uri: 'http://www.eclipselabs.org/ecore/2012/resources' });
+var SampleResource = resourceSet.create({ uri: 'sample.ecore' });
+var SamplePackage = Ecore.EPackage.create({
+    name: 'sample', nsPrefix: 'sample', nsURI: 'http://example.org/sample',
+    eClassifiers: [
+        {   eClass: Ecore.EClass, name: 'Foo',
+            eStructuralFeatures:[
+                { eClass: Ecore.EAttribute, name: 'bar', eType: Ecore.EString }
+            ]
+        }
+    ]
+});
+SampleResource.get('contents').add(SamplePackage);
+
+window.Workbench = _.extend({}, Backbone.Events);
+Workbench.properties = new PropertyWindow();
+Workbench.editorTab = new EcoreTabPanel();
+Workbench.navigator = new NavigatorView({ model: resourceSet });
+Workbench.palette = Workbench.navigator.paletteView;
+
 window.onload = function() {
-
-    window.Workbench = _.extend({}, Backbone.Events);
-
-    // ResourceSet
-    //
-
-    var resourceSet = Ecore.ResourceSet.create();
-    var EcoreResource = resourceSet.create({ uri: Ecore.EcorePackage.get('nsURI') });
-    var ResourceResource = resourceSet.create({ uri: 'http://www.eclipselabs.org/ecore/2012/resources' });
-    var SampleResource = resourceSet.create({ uri: 'sample.ecore' });
-    var SamplePackage = Ecore.EPackage.create({
-        name: 'sample', nsPrefix: 'sample', nsURI: 'http://example.org/sample',
-        eClassifiers: [
-            {   eClass: Ecore.EClass, name: 'Foo',
-                eStructuralFeatures:[
-                    { eClass: Ecore.EAttribute, name: 'bar', eType: Ecore.EString }
-                ]
-            }
-        ]
-    });
-    SampleResource.get('contents').add(SamplePackage);
-
-    Workbench.properties = new PropertyWindow();
-    Workbench.editorTab = new EcoreTabPanel();
-    Workbench.navigator = new NavigatorView({ model: resourceSet });
-    Workbench.palette = Workbench.navigator.paletteView;
 
     Workbench.navigator.render();
 
@@ -37,15 +35,16 @@ window.onload = function() {
     }, Workbench);
 
     Workbench.navigator.on('hide', function() {
-        $('#main').animate({ left: '50px' }, 100);
+        $('#main').animate({ left: '30px' }, 200);
     }, Workbench);
 
     Workbench.navigator.on('show', function() {
-        $('#main').animate({ left: '300px' }, 100);
+        $('#main').animate({ left: '280px' }, 200);
     }, Workbench);
 
     Workbench.editorTab.on('select', function(m) {
-        this.properties.content.model = m;
+        this.navigator.propertyView.model = m.model;
+        this.navigator.propertyView.render();
     }, Workbench);
 
     Workbench.properties.content.on('change', function() {
@@ -59,3 +58,4 @@ window.onload = function() {
     }, Workbench);
 
 };
+

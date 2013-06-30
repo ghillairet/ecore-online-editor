@@ -55,6 +55,12 @@ Edit.LabelProvider = {
     Resource: function(eObject) { return eObject.get('uri'); }
 };
 
+Edit.util = {
+    lastSegment: function(uri) {
+        return _.isString(uri) ? uri.slice(uri.lastIndexOf('/') + 1, uri.length) : null;
+    }
+};
+
 
 
 function draggable(element) {
@@ -591,11 +597,11 @@ function getElements(eObject, eFeature) {
 
 
 
-$('[contenteditable]').live('focus', function() {
+$('[contenteditable]').on('focus', function() {
     var $this = $(this);
     $this.data('before', $this.html());
     return $this;
-}).live('blur keyup paste', function() {
+}).on('blur keyup paste', function() {
     var $this = $(this);
     if ($this.data('before') !== $this.html()) {
         $this.data('before', $this.html());
@@ -685,31 +691,381 @@ Edit.PropertySheet = Backbone.View.extend({
 
 
 
+/**
+ * @name Tab
+ * @class
+ */
+
 Edit.Tab = Backbone.View.extend({
     template: _.template('<li><a href="#tab-<%= id %>" data-toggle="tab"> <%= title %> <i class="icon-remove-circle"></i> </a></li>'),
 
     events: {
-        'click a > i[class="icon-remove-circle"]': 'remove'
+        'click a > i[class="icon-remove-circle"]': 'remove',
+        'mouseover': '_showClose',
+        'mouseout': '_hideClose'
     },
-
     initialize: function(attributes) {
+        this.title = attributes.title;
         this.editor = attributes.editor;
-        this.isRender = false;
+        this.part = attributes.part;
     },
     render: function() {
-        if (!this.isRender) {
-            var title = this.editor.getTitle();
-            var html = this.template({ id: this.editor.cid, title: title });
+        if (!this.$tab) {
+            var title = this.title || this.editor.getTitle();
+            var html = this.template({ id: this.part.cid, title: title });
             this.setElement(html);
-            this.isRender = true;
+            this.$tab = $('a', this.$el);
+            this.$close = $('a > i[class="icon-remove-circle"]', this.$el);
+            this._hideClose();
         }
         return this;
     },
     remove: function() {
-        this.trigger('remove');
+        this.trigger('remove', this.editor);
+        return Backbone.View.prototype.remove.apply(this);
+    },
+    show: function() {
+        if (this.$tab) this.$tab.tab('show');
+    },
+    _showClose: function() {
+        if (this.$close) this.$close.css('display', 'inline-block');
+    },
+    _hideClose: function() {
+        if (this.$close) this.$close.css('display', 'none');
+    }
+});
+
+/**
+ * @name TabDropdown
+ * @class
+ */
+
+Edit.TabDropdown = Backbone.View.extend({
+    template: _.template('<li class="dropdown"><a href="#" data-toggle="dropdown"> <%= title %> <i class="caret"></i></a></li>'),
+    dropDownTemplate: '<ul class="dropdown-menu"></ul>',
+
+    initialize: function(attributes) {
+        this.title = attributes.title;
+        this.editor = attributes.editor;
+        this.parts = attributes.parts;
+        this.items = [];
+    },
+    render: function() {
+        if (!this.$tab) {
+            var html = this.template({ title: this.title });
+            this.setElement(html);
+            this.$tab = $('a', this.$el);
+            this.$el.append(this.dropDownTemplate);
+            this.$menu = $('.dropdown-menu', this.$el);
+            _.each(this.items, this.renderItem, this);
+        }
+        return this;
+    },
+    renderItem: function(item) {
+        var tmpl;
+        if (item.id) {
+            tmpl = _.template('<li><a href="#tab-<%= id %>" data-toggle="tab"><%= title %></a></li>');
+            if (this.$menu) this.$menu.append(tmpl(item));
+        } else {
+            tmpl = _.template('<li><a href="#"><%= title %></a></li>');
+            if (this.$menu) {
+                this.$menu.append(tmpl(item));
+                $('a:last', this.$menu).click(item.click);
+            }
+        }
+    },
+    addDropItem: function(title, param) {
+        if (typeof param === 'function') {
+            this.items.push({ title: title, click: param });
+        } else {
+            this.items.push({ title: title, id: param });
+        }
+        return this;
+    },
+    show: function() {
+        if (this.$el) {
+            $('li:eq(0) a', this.$el).tab('show');
+        }
+    },
+    remove: function() {
+        this.trigger('remove', this.editor);
         return Backbone.View.prototype.remove.apply(this);
     }
 });
+
+
+/*
+var ctxMenuTempplate =
+    '<div class="editor-contextmenu">'+
+        '<ul class="menu">'+
+			'<li>'+
+				'<button class="insert" id="btnInsertChild"'+
+					'title="Insert a new element as child">'+
+					'<div class="icon"></div>'+
+					'Add Child'+
+				'</button>'+
+				'<ul class="menu" style="width: 130px;" id="ulInsertChild">'+
+				'</ul>'+
+			'</li>'+
+			'<li>'+
+				'<button class="insert" id="btnInsertSibling"'+
+					'title="Insert a new element as sibling">'+
+					'<div class="icon"></div>'+
+					'Add Sibling'+
+				'</button>'+
+				'<ul class="menu" style="width: 130px;" id="ulInsertSibling">'+
+				'</ul>'+
+			'</li>'+
+			'<li>'+
+				'<button class="remove" title="Remove this field (Ctrl+Del)" id="btnRemove">'+
+					'<div class="icon"></div>'+
+					'Remove'+
+				'</button>'+
+			'</li>'+
+		'</ul>'+
+	'</div>';
+*/
+
+/**
+ * @name ContextMenu
+ * @class
+ */
+
+Edit.ContextMenu = Backbone.View.extend({
+    template: '<div class="editor-contextmenu"><ul class="menu"></ul></div>',
+    initialize: function(attributes) {
+        this.tree = attributes.tree;
+        this.node = attributes.node;
+    },
+    render: function() {
+        this.setElement(this.template);
+        this.$menu = $('.menu', this.$el);
+        this.$menu.append(new Edit.InsertChildEntry({
+            menu: this,
+            model: this.node.model
+        }).render().$el);
+        this.$menu.append(new Edit.InsertSiblingEntry({
+            menu: this,
+            model: this.node.model
+        }).render().$el);
+        this.$menu.append(new Edit.DeleteChildEntry({
+            menu: this
+        }).render().$el);
+        return this;
+    },
+    center: function() {
+        if (this.$el) {
+            var el = this.$el[0];
+            var pos = this.node.$el.position();
+            el.style.top = pos.top + 14 + 'px';
+            el.style.left = pos.left + 14 + 'px';
+        }
+        return this;
+    },
+    eraseNode: function() {
+        this.node.erase();
+        this.remove();
+    }
+});
+
+Edit.ContextMenuEntry = Backbone.View.extend({
+    template: _.template(
+                '<li>'+
+                    '<button class="<%= btnClass %>" title="<%= title %>">'+
+                        '<div class="icon"></div> <%= label %>'+
+                    '</button>'+
+                    '<ul class="menu" id="<%= ulId %>"></ul>'+
+                '</li>'),
+
+    expanded: false,
+
+    events: {
+        'click button': 'expand'
+    },
+
+    initialize: function(attributes) {
+        this.menu = attributes.menu;
+    },
+
+    render: function() {
+        var html = this.template({
+            btnClass: this.btnClass,
+            title: this.title,
+            label: this.label,
+            ulId: this.ulId
+        });
+        this.setElement(html);
+        this.$menu = $('#' + this.ulId, this.$el);
+        return this;
+    },
+    expand: function() {
+        if (this.expanded) {
+            this.$menu.css('display', 'none');
+        } else {
+            this.$menu.css('display', 'block');
+            this.$menu.css('padding', '5px 10px');
+        }
+        this.expanded = !this.expanded;
+    }
+});
+
+Edit.DeleteChildEntry = Edit.ContextMenuEntry.extend({
+    template: _.template(
+                '<li>'+
+                    '<button class="<%= btnClass %>" title="<%= title %>">'+
+                        '<div class="icon"></div> <%= label %>'+
+                    '</button>'+
+                '</li>'),
+
+    title: 'Delete this element',
+    label: 'Delete',
+    btnClass: 'remove',
+
+    expand: function() {
+        this.menu.eraseNode();
+        //this.menu.trigger('change', this.menu.node);
+        this.menu.remove();
+    }
+});
+
+Edit.InsertChildEntry = Edit.ContextMenuEntry.extend({
+    title: 'Insert a new element as child',
+    label: 'Add Child',
+    btnClass: 'insert',
+    ulId: 'ulInsertChild',
+
+    expand: function() {
+        this.insertChild();
+        Edit.ContextMenuEntry.prototype.expand.apply(this);
+    },
+
+    insertChild: function() {
+        var ul = this.$menu;
+        var model = this.model;
+        var features = model.eClass.get('eAllContainments');
+        var eContainingFeature = model.eContainingFeature;
+
+        ul.children().remove();
+
+        var createChild = function(feature, model, ul) {
+            var eType = feature.get('eType');
+            var types = _.filter(_.union([eType], eType.get('eAllSubTypes')), function(t) {
+                return !t.get('abstract');
+            });
+            var item, label, html;
+
+            _.each(types, function(type) {
+                label = 'Child ' + type.get('name');
+                item = new Edit.ContextMenuItem({
+                    label: label,
+                    model: model,
+                    type: type,
+                    feature: feature
+                });
+                ul.append(item.render().$el);
+                item.on('create', function() {
+                    this.menu.trigger('change', this.menu.node);
+                    this.menu.remove();
+                }, this);
+            }, this);
+        };
+        _.each(features, function(feature) { createChild.apply(this, [feature, model, ul]); }, this);
+    }
+});
+
+/**
+ * @name InsertSiblingEntry
+ */
+
+Edit.InsertSiblingEntry = Edit.ContextMenuEntry.extend({
+    title: 'Insert a new element as sibling',
+    label: 'Add Sibling',
+    btnClass: 'insert',
+    ulId: 'ulInsertSibling',
+
+    expand: function() {
+        this.insertSibling();
+        Edit.ContextMenuEntry.prototype.expand.apply(this);
+    },
+
+    insertSibling: function() {
+        var ul = this.$menu;
+        var model = this.model;
+        var child = model.eClass.get('eAllContainments');
+        var eContainingFeature = model.eContainingFeature;
+
+        ul.children().remove();
+
+        var createSiblingItems = function(type, feature, model, editor) {
+            return function() {
+                var eContainer = model.eContainer;
+                if (eContainer) {
+                    // change selection for rendering new content
+                    // editor.tree.setSelection(editor.tree.selected.parent);
+                    if (feature.get('upperBound') !== 1) {
+                        eContainer.get(feature).add(type.create());
+                    } else {
+                        eContainer.set(feature.get('name'), type.create());
+                    }
+                }
+            };
+        };
+
+        if (eContainingFeature) {
+            var eType = eContainingFeature.get('eType');
+            var siblings = _.filter(_.union([eType], eType.get('eAllSubTypes')), function(t) {
+                return !t.get('abstract');
+            });
+            var label, item;
+
+            _.each(siblings, function(type) {
+                label = 'Sibling ' + type.get('name');
+                item = new Edit.ContextMenuItem({
+                    label: label,
+                    feature: eContainingFeature,
+                    type: type,
+                    model: model.eContainer
+                });
+                ul.append(item.render().$el);
+                item.on('create', function() {
+                    this.menu.trigger('change', this.menu.node.parent);
+                    this.menu.remove();
+                }, this);
+            }, this);
+        }
+    }
+});
+
+/**
+ * @name ContextMenuItem
+ */
+
+Edit.ContextMenuItem = Backbone.View.extend({
+    template: _.template('<li><button class="insert"><div class="icon"></div><%= label %></button></li>'),
+    events: {
+        'click button': 'create'
+    },
+    initialize: function(attributes) {
+        this.label = attributes.label;
+        this.feature = attributes.feature;
+        this.type = attributes.type;
+    },
+    render: function() {
+        this.setElement(this.template({ label: this.label }));
+        return this;
+    },
+    create: function() {
+        if (!this.model || !this.feature) return;
+
+        if (this.feature.get('upperBound') === 1) {
+            this.model.set(this.feature.get('name'), this.type.create());
+        } else {
+            this.model.get(this.feature).add(this.type.create());
+        }
+        this.trigger('create');
+    }
+});
+
 
 
 /**
@@ -718,6 +1074,8 @@ Edit.Tab = Backbone.View.extend({
  *
  */
 Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
+    _marginHint: 24,
+
     template: '<tr class="tree-item-tr"></tr>',
     table: '<table style="border-collapse; collapse; margin-left: 0px;"><tbody><tr></tr></tbody></table>',
     td: '<td class="tree-td"></td>',
@@ -725,29 +1083,38 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
     events: {
         'mouseover': 'highlight',
         'mouseout': 'unhighlight',
-        'click': 'select'
+        'click': 'select',
+        'click button[class="icon-edit-edit"]': 'edit'
     },
 
     initialize: function(attributes) {
+        _.bindAll(this, 'render', 'select', 'expand',
+            'collapse', 'highlight', 'unhighlight', 'edit');
         this.tree = attributes.tree;
         this.parent = attributes.parent;
         this.margin = attributes.margin;
         this.children = [];
-        _.bindAll(this, 'render', 'select', 'expand', 'collapse', 'highlight', 'unhighlight');
     },
     render: function() {
-        if (this.$el) {
+        if (this.$el.children().length) {
             this.$el.children().remove();
-        } else {
-            this.setElement(this.template);
         }
+        this.setElement(this.template);
+
         if (this.model) {
-            this.$el.append(this._createLabelElemnt());
+            _.each(this.createContent(), function(e) { this.$el.append(e); }, this);
         } else {
             this.$el.append(this._createAddElement());
         }
         return this;
     },
+
+    erase: function() {
+        this.remove();
+        console.log(this.model.eContainer);
+        console.log(this.model.eContainingFeature);
+    },
+
     highlight: function() {
         this.$el.css('background', 'rgba(255, 255, 102, 0.6)');
         this.$el.css('cursor', 'pointer');
@@ -779,13 +1146,18 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
         }
         return this;
     },
+    edit: function(e) {
+        e.stopImmediatePropagation();
+        this.tree.editNode(this, e);
+    },
+
     addNode: function(model) {
         var previous = _.last(this.children);
         var view = new Edit.TreeNode({
             model: model,
             tree: this.tree,
             parent: this,
-            margin: this.margin + 24
+            margin: this.margin + this._marginHint
         });
 
         if (previous) previous.next = view;
@@ -793,14 +1165,26 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
         this.children.push(view);
         view.render();
 
-        if (this.next && this.next !== this) {
-            this.tree.$tbody[0].insertBefore(view.$el[0], this.next.$el[0]);
+        var findNext = function(view) {
+            if (!view) {
+                return null;
+            } else if (view.next && view.next !== view) {
+                return view.next;
+            } else return findNext(view.parent);
+        };
+
+        var next = findNext(this);
+        if (next) {
+            this.tree.$tbody[0].insertBefore(view.$el[0], next.$el[0]);
         } else {
             this.tree.$tbody.append(view.$el);
         }
         return this;
     },
     expand: function() {
+        if (this.tree.contextMenu) {
+            this.tree.contextMenu.remove();
+        }
         if (this.expanded) this.collapse();
         this.expanded = true;
         var contents = this.model.eContents();
@@ -815,51 +1199,30 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
     },
     remove: function() {
         _.each(this.children, function(c) { c.remove(); });
-        Backbone.View.prototype.remove.apply(this);
         this.children.length = 0;
-        return this;
+        return Backbone.View.prototype.remove.apply(this);
     },
 
+    // private members
 
-    // private methods
+    createContent: function() {
+        var td_edit = document.createElement('td');
+        var td_edit_btn = document.createElement('button');
+        td_edit_btn.className = 'icon-edit-edit';
+        td_edit.appendChild(td_edit_btn);
 
+        var td_table = document.createElement('td');
+        td_table.className = 'tree-td';
+        td_table.appendChild(this._createInnerTable());
 
-    _createAddElement: function() {
-        var td = document.createElement('td');
-        td.className = 'tree-td';
-        var add = document.createElement('a');
-        add.className = 'icon-plus icon-large';
-        td.appendChild(add);
-        return td;
-    },
-    _createOrderElement: function() {
-        var td = document.createElement('td');
-        td.className = 'tree-td';
-        if (this.parent) {
-            var reorder = document.createElement('a');
-            reorder.className += ' icon-reorder icon-large';
-            reorder.style.color = 'grey';
-            td.appendChild(reorder);
-        }
-        return td;
-    },
-    _createLabelElemnt: function() {
-        var td = document.createElement('td');
-        td.className = 'tree-td';
-        var table = this._createInnerTable();
-        td.appendChild(table.table);
-
-        var label = Edit.LabelProvider.getLabel(this.model);
-        table.label.innerHTML = label;
-
-        return td;
+        return [ td_edit, td_table ];
     },
     _createEditElement: function() {
         var td = document.createElement('td');
         td.style.background = '#F5F5F5';
         td.style.color = '#CCCCCC';
         td.style.padding = 0;
-        var copy = document.createElement('div');
+        var edit_btn = document.createElement('button');
         copy.className = 'icon-edit icon-large';
         td.appendChild(copy);
         return td;
@@ -875,37 +1238,53 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
 
         return td;
     },
-    _createInnerTable: function() {
-        var table = document.createElement('table');
-        table.style.marginLeft = this.margin + 'px';
-        table.style.borderCollapse = 'collapse';
-        var tbody = document.createElement('tbody');
-        var tr = document.createElement('tr');
+    _createCaretIcon: function() {
         var td_btn = document.createElement('td');
         td_btn.className = 'tree-td';
         var btn = document.createElement('a');
         btn.className = 'icon-caret-right';
         btn.style.color = 'grey';
         btn.style.cursor = 'pointer';
-        var td_label = document.createElement('td');
-        td_label.className = 'tree-td';
-        var div_label = document.createElement('div');
-        div_label.className = 'tree-label';
+        td_btn.appendChild(btn);
+
+        return td_btn;
+    },
+    _createNodeIcon: function() {
         var td_icon = document.createElement('td');
         td_icon.className = 'tree-td';
         var span_icon = document.createElement('span');
         span_icon.className = 'icon-edit-' + this.model.eClass.get('name');
-
-        td_btn.appendChild(btn);
-        tr.appendChild(td_btn);
-        tr.appendChild(td_icon);
         td_icon.appendChild(span_icon);
+
+        return td_icon;
+    },
+    _createNodeLabel: function() {
+        var td_label = document.createElement('td');
+        td_label.className = 'tree-td';
+        var div_label = document.createElement('div');
+        div_label.className = 'tree-label';
         td_label.appendChild(div_label);
-        tr.appendChild(td_label);
+
+        var label = Edit.LabelProvider.getLabel(this.model);
+        div_label.innerHTML = label;
+
+        return td_label;
+    },
+    _createInnerTable: function() {
+        var table = document.createElement('table');
+        table.style.marginLeft = this.margin + 'px';
+        table.style.borderCollapse = 'collapse';
+        var tbody = document.createElement('tbody');
+        var tr = document.createElement('tr');
+
+        tr.appendChild(this._createCaretIcon());
+        tr.appendChild(this._createNodeIcon());
+        tr.appendChild(this._createNodeLabel());
+
         tbody.appendChild(tr);
         table.appendChild(tbody);
 
-        return { table: table, label: div_label };
+        return table;
     }
 
 });
@@ -918,8 +1297,8 @@ Edit.TreeNode = Backbone.View.extend(/** @lends TreeNode.prototype */ {
  *
  */
 Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
-    template: _.template('<table class="tree-table"></table>'),
-    tableTmpl: _.template('<colgroup><col></colgroup><tbody></tbody>'),
+    template: '<table class="tree-table"></table>',
+    tableTmpl: '<colgroup><col width="24px"><col></colgroup><tbody></tbody>',
 
     initialize: function(attributes) {
         this.selected = null;
@@ -928,11 +1307,9 @@ Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
 
     render: function() {
         if (!this.$body) {
-            this.setElement(this.template());
-            this.$el.append(this.tableTmpl());
+            this.setElement(this.template);
+            this.$el.append(this.tableTmpl);
             this.$tbody = $('tbody', this.$el);
-
-            var previous, current;
             this.model.get('contents').each(this.addNode, this);
         }
 
@@ -941,19 +1318,16 @@ Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
 
     addNode: function(model) {
         var previous = _.last(this.nodes);
-        var view = new Edit.TreeNode({ model: model, tree: this, margin: 0 });
+        var view = new Edit.TreeNode({
+            model: model,
+            tree: this,
+            margin: 0
+        });
         if (previous) previous.next = view;
 
         this.nodes.push(view);
         view.render();
         this.$tbody.append(view.$el);
-    },
-
-    expand: function() {
-        if (this.$frame) {
-            this.$frame.expand();
-        }
-        return this;
     },
 
     setSelection: function(view) {
@@ -968,6 +1342,255 @@ Edit.Tree = Backbone.View.extend(/** @lends Tree.prototype */ {
     remove: function() {
         if (this.$body) this.$body.remove();
         _.each(this.nodes, function(node) { node.remove(); });
+        return Backbone.View.prototype.remove.apply(this);
+    },
+
+    editNode: function(node, eve) {
+        if (this.contextMenu) this.contextMenu.remove();
+        this.contextMenu = new Edit.ContextMenu({ node: node });
+        this.contextMenu.render();
+        this.$el.append(this.contextMenu.$el);
+        this.contextMenu.center();
+        this.contextMenu.on('change', function(node) {
+            if (node) node.expand();
+        }, this);
+    }
+});
+
+
+/**
+ * @name Part
+ * @class
+ */
+
+Edit.Part = Backbone.View.extend({
+    menu: false,
+
+    _frame: '<div class="editor-frame"></div>',
+    _menu: '<div class="editor-menu"></div>',
+    _content: '<div class="editor-content-outer"><div class="editor-content"></div></div>',
+
+    render: function() {
+        if (!this.$content) {
+            this.$el.append(this._frame);
+            this.$frame = $('.editor-frame', this.$el);
+            if (this.menu) {
+                this.$frame.append(this._menu);
+            }
+            this.$frame.append(this._content);
+            this.$content = $('.editor-content', this.$frame);
+
+            this.renderContent();
+        }
+        return this;
+    },
+    renderContent: function() {}
+});
+
+/**
+ * @name PanelPart
+ * @class
+ */
+
+Edit.PanelPart = Edit.Part.extend({
+    _template: _.template('<div class="tab-pane" id="tab-<%= id %>"></div>'),
+
+    render: function() {
+        if (!this.$content) {
+            this.setElement(this._template({ id: this.cid }));
+            this.$el.append(this._frame);
+            this.$frame = $('.editor-frame', this.$el);
+            if (this.menu) {
+                this.$frame.append(this._menu);
+            }
+            this.$frame.append(this._content);
+            this.$content = $('.editor-content', this.$frame);
+
+            this.renderContent();
+        }
+        return this;
+    },
+    renderContent: function() {}
+});
+
+/**
+ * @name TreePart
+ * @class
+ */
+
+Edit.TreePart = Edit.Part.extend({
+    initialize: function(attributes) {
+        this.tree = new Edit.Tree({ model: this.model });
+    },
+    renderContent: function() {
+        this.tree.render();
+        this.$content.append(this.tree.$el);
+        this.tree.on('select', function(m) { this.trigger('select', m); }, this);
+        this.tree.on('deselect', function(m) { this.trigger('deselect', m); }, this);
+        return this;
+    },
+    remove: function() {
+        this.off();
+        return Edit.Part.prototype.remove.apply(this);
+    }
+});
+
+/**
+ * @name TreePanelPart
+ * @class
+ */
+
+Edit.TreePanelPart = Edit.PanelPart.extend({
+    initialize: function(attributes) {
+        this.tree = new Edit.Tree({ model: this.model });
+    },
+    renderContent: function() {
+        this.tree.render();
+        this.$content.append(this.tree.$el);
+        this.tree.on('select', function(m) { this.trigger('select', m); }, this);
+        this.tree.on('deselect', function(m) { this.trigger('deselect', m); }, this);
+        return this;
+    },
+    remove: function() {
+        this.off();
+        return Edit.PanelPart.prototype.remove.apply(this);
+    }
+});
+
+
+/**
+ * @name TabPanel
+ * @class
+ */
+Edit.TabPanel = Backbone.View.extend(/** @lends TabPanel.prototype */ {
+    template: '<ul class="nav nav-tabs"></ul><div class="tab-content"></div>',
+
+    initialize: function(attributes) {
+        this.elements = [];
+    },
+    render: function() {
+        if (!this.$content && !this.$tabs) {
+            this.$el.append(this.template);
+            this.$el.addClass('tabbable');
+            this.$content = $('.tab-content', this.$el);
+            this.$tabs = $('.nav-tabs', this.$el);
+        }
+
+        _.each(this.elements, function(e) { e.render(); });
+
+        return this;
+    },
+    add: function(element) {
+        if (!this.get(element)) {
+            this.elements.push(element);
+            element.panel = this;
+            element.on('remove', this.suppress, this);
+        }
+    },
+    get: function(element) {
+        return _.find(this.elements, function(e) { return e === element; });
+    },
+    getByModel: function(model) {
+        return _.find(this.editors, function(e) { return e.model === model; });
+    },
+    suppress: function(element) {
+        this.elements = _.without(this.elements, element);
+        element.off('remove', this.suppress);
+        if (this.elements.length) {
+            this.show(this.elements[0]);
+        }
+    },
+    show: function(element) {
+        console.log(element);
+        if (element) element.show();
+    },
+    open: function(model) {
+        var editor = this.getByModel(model);
+        if (!editor) {
+            editor = new Edit.TabEditor({ model: model });
+            this.add(editor);
+            editor.render();
+        }
+        editor.show();
+    }
+});
+
+
+/**
+ * PanelElement are sub views of a TabPanel, they include a Tab part and a
+ * content part.
+ *
+ * @name PanelElement
+ * @class
+ */
+Edit.PanelElement = Backbone.View.extend({
+
+    initialize: function(attributes) {
+        if (!attributes) attributes = {};
+        this.title = attributes.title;
+        this.panel = attributes.panel;
+        this.tab = attributes.tab;
+        this.part = attributes.part;
+        this.tab.part = this.part;
+
+        this.tab.on('remove', this.remove, this);
+    },
+    render: function() {
+        this.tab.render();
+        this.panel.$tabs.append(this.tab.$el);
+        this.renderPart(this.part);
+
+        return this;
+    },
+    renderPart: function(part) {
+        if (!part) return;
+        part.render();
+        this.panel.$content.append(part.$el);
+    },
+    show: function() {
+        if (this.tab) this.tab.show();
+    },
+    remove: function() {
+        if (this.part && this.tab) {
+            this.part.remove();
+            this.trigger('remove', this);
+            delete this.part;
+            delete this.tab;
+        }
+        return Backbone.View.prototype.remove.apply(this);
+    }
+});
+
+/**
+ * @name MultiPanelElement
+ * @class
+ */
+
+Edit.MultiPanelElement = Edit.PanelElement.extend({
+    initialize: function (attributes) {
+        if (!attributes) attributes = {};
+        this.title = attributes.title;
+        this.panel = attributes.panel;
+        this.tab = attributes.tab;
+        this.parts = attributes.parts;
+        this.tab.parts = this.parts;
+
+        this.tab.on('remove', this.remove, this);
+    },
+    render: function() {
+        this.tab.render();
+        this.panel.$tabs.append(this.tab.$el);
+        _.each(this.parts, this.renderPart, this);
+        return this;
+    },
+    remove: function() {
+        if (this.parts && this.tab) {
+            _.each(this.parts, function(p) { p.remove(); });
+            this.trigger('remove', this);
+            this.parts.length = 0;
+            delete this.parts;
+            delete this.tab;
+        }
         return Backbone.View.prototype.remove.apply(this);
     }
 });
@@ -1024,6 +1647,20 @@ Edit.Editor = Backbone.View.extend(/** @lends Edior.prototype */ {
 });
 
 /**
+ * @name PanelEditor
+ * @class
+ */
+
+Edit.PanelEditor = Edit.PanelElement.extend({
+    initialize: function(attributes) {
+        if (!attributes) attributes = {};
+        if (!attributes.title) attributes.title = Edit.util.lastSegment(this.model.get('uri'));
+        attributes.tab = new Edit.Tab({ title: attributes.title, editor: this });
+        Edit.PanelElement.prototype.initialize.apply(this,[attributes]);
+    }
+});
+
+/**
  * @name TabEditor
  * @class
  *
@@ -1065,7 +1702,6 @@ Edit.TabEditor = Edit.Editor.extend(/** @lends TabEdior.prototype */ {
     }
 
 });
-
 
 /**
  * @name TreeTabEdior
@@ -1210,64 +1846,6 @@ function createChildItems(feature, model) {
         this.addItem(item);
     }, this);
 }
-
-
-/**
- * @name TabPanel
- * @class
- */
-Edit.TabPanel = Backbone.View.extend(/** @lends TabPanel.prototype */ {
-    template: _.template('<ul class="nav nav-tabs"></ul> <div class="tab-content"></div>'),
-
-    initialize: function(attributes) {
-        this.editors = [];
-    },
-    render: function() {
-        if (!this.$content && !this.$tabs) {
-            var html = this.template();
-            this.$el.addClass('tabbable');
-
-            this.$el.append(html);
-
-            this.$content = $('.tab-content', this.$el);
-            this.$tabs = $('.nav-tabs', this.$el);
-        }
-
-        _.each(this.editors, function(e) { e.render(); });
-
-        return this;
-    },
-    add: function(editor) {
-        if (this.$content && this.$tabs) {
-            editor.$container = this.$content;
-            editor.$tabs = this.$tabs;
-            this.editors.push(editor);
-
-            editor.on('remove', function() { this.suppress(editor); }, this);
-        }
-    },
-    get: function(editor) {
-        return _.find(this.editors, function(e) { return e === editor; });
-    },
-    getByModel: function(model) {
-        return _.find(this.editors, function(e) { return e.model === model; });
-    },
-    suppress: function(editor) {
-        this.editors = _.without(this.editors, editor);
-    },
-    show: function(model) {
-        this.getByModel(model).show();
-    },
-    open: function(model) {
-        var editor = this.getByModel(model);
-        if (!editor) {
-            editor = new Edit.TabEditor({ model: model });
-            this.add(editor);
-            editor.render();
-        }
-        editor.show();
-    }
-});
 
 
 
